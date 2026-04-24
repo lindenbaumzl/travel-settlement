@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="旅行費用精算" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="旅行費用精算" />
+  <title>旅行費用精算ツール</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #d1d5db;
+      --header: #eef2ff;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --danger: #dc2626;
+      --danger-dark: #b91c1c;
+      --success-bg: #ecfdf5;
+      --warning-bg: #fffbeb;
+      --edit-bg: #fff7ed;
+      --soft: #f9fafb;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 0.02em; }
+    h2 { margin: 0 0 12px; font-size: 18px; }
+    h3 { margin: 0 0 8px; font-size: 16px; }
+
+    .subtitle { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .main-header, .app-header, .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .radio-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      min-height: 34px;
+    }
+
+    .radio-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .radio-label input { width: auto; min-height: auto; }
+
+    .participant-list, .input-list { display: grid; gap: 12px; margin-bottom: 14px; }
+
+    .participant-item {
+      display: grid;
+      grid-template-columns: 1fr 46px;
+      gap: 8px;
+      align-items: end;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--soft);
+    }
+
+    .participant-view { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 120px 1.4fr 110px 140px 100px 110px 120px 210px 110px 120px 120px 110px 1fr 46px;
+      gap: 8px;
+      align-items: end;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      min-height: 34px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    input[type="number"] { text-align: right; }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: var(--accent);
+      transition: 0.15s ease;
+      white-space: nowrap;
+    }
+
+    button:hover { background: var(--accent-dark); }
+    button.secondary { background: #4b5563; }
+    button.secondary:hover { background: #374151; }
+    button.danger { background: var(--danger); }
+    button.danger:hover { background: var(--danger-dark); }
+    button.small { padding: 7px 10px; font-size: 12px; }
+    button.icon { width: 36px; height: 34px; padding: 0; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+    .trip-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #fff;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    }
+
+    .trip-card-title { font-size: 17px; font-weight: 800; margin-bottom: 8px; }
+    .trip-meta { color: var(--muted); font-size: 13px; margin: 4px 0; }
+
+    .summary-table {
+      width: auto;
+      max-width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      table-layout: auto;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      border: 1px solid var(--border);
+      padding: 7px 9px;
+      white-space: nowrap;
+      width: auto;
+    }
+
+    .summary-table th {
+      background: var(--header);
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .summary-table th:first-child,
+    .summary-table td:first-child {
+      min-width: 120px;
+    }
+
+    .summary-table td.num,
+    .summary-table th.num {
+      text-align: right;
+      min-width: 92px;
+    }
+
+    .settlement-list { display: grid; gap: 8px; margin-top: 12px; }
+    .settlement-result {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--success-bg);
+      font-size: 15px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .summary-grid .card {
+      overflow-x: auto;
+    }
+
+    .table-card { background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 0; overflow: hidden; }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .table-header h2 { margin: 0; }
+    .table-wrap { width: 100%; overflow-x: auto; max-height: 65vh; }
+
+    .summary-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table.expense-table { width: 100%; min-width: 1780px; border-collapse: collapse; font-size: 13px; }
+    .expense-table th, .expense-table td { border: 1px solid var(--border); padding: 7px; vertical-align: middle; }
+    .expense-table th { position: sticky; top: 0; z-index: 2; background: var(--header); white-space: nowrap; text-align: center; }
+    .expense-table td { background: #fff; }
+    .expense-table tr.editing td { background: var(--edit-bg); }
+    .expense-table .num, .expense-table .jpy-cell { text-align: right; font-weight: 600; white-space: nowrap; }
+
+    .empty-message { padding: 22px; color: var(--muted); text-align: center; }
+    .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+    .warning { background: var(--warning-bg); }
+    .num { text-align: right; white-space: nowrap; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 1200px) {
+      .input-row { grid-template-columns: repeat(4, minmax(150px, 1fr)); }
+      .form-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      body { background: #eef2f7; }
+      .container { padding: 12px; }
+      h1 { font-size: 22px; line-height: 1.3; }
+      h2 { font-size: 17px; }
+      .subtitle { font-size: 13px; margin-bottom: 14px; }
+      .card { padding: 14px; border-radius: 14px; margin-bottom: 14px; }
+      .summary-grid { grid-template-columns: 1fr; gap: 12px; }
+      .form-grid { grid-template-columns: 1fr; gap: 10px; }
+      .input-row { grid-template-columns: 1fr; gap: 10px; padding: 12px; }
+      .participant-item { grid-template-columns: 1fr 42px; }
+      .toolbar { display: grid; grid-template-columns: 1fr; gap: 8px; }
+      .toolbar button { width: 100%; }
+      button { min-height: 42px; font-size: 14px; }
+      button.small { min-height: 36px; padding: 8px 10px; }
+      input, select { min-height: 42px; font-size: 16px; }
+      .radio-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .radio-label { min-height: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+      .trip-grid { grid-template-columns: 1fr; }
+      .trip-card { padding: 14px; border-radius: 14px; }
+      .tag { max-width: 100%; overflow-wrap: anywhere; }
+      .table-header { padding: 14px; align-items: flex-start; }
+      .table-wrap { overflow-x: auto; max-height: 65vh; }
+      .summary-table { font-size: 13px; min-width: 0; }
+      .summary-table th, .summary-table td { padding: 7px 8px; }
+      .summary-table th:first-child, .summary-table td:first-child { min-width: 104px; }
+      .summary-table td.num, .summary-table th.num { min-width: 86px; }
+      .summary-grid .table-wrap, .summary-wrap { overflow-x: auto; }
+      table.expense-table { min-width: 1780px; width: 100%; }
+      .expense-table th,
+      .expense-table td { display: table-cell; }
+      .expense-table thead { display: table-header-group; }
+      .expense-table tbody { display: table-row-group; }
+      .expense-table tr { display: table-row; }
+      .expense-table .num,
+      .expense-table .jpy-cell { text-align: right; white-space: nowrap; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 10px; }
+      .card { padding: 12px; }
+      .radio-row { grid-template-columns: 1fr; }
+      .summary-table { min-width: 0; }
+      table.expense-table { min-width: 1780px; }
+      .app-header .toolbar, .main-header .toolbar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="mainView">
+      <div class="main-header">
+        <div>
+          <h1>旅行費用精算ツール</h1>
+          <p class="subtitle">複数の旅行を追加・記録・編集・削除できます。各旅行ごとに参加者、通貨、出費、精算結果を管理します。</p>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>旅行一覧</h2>
+          <button onclick="showNewTripForm()">新規追加</button>
+        </div>
+        <div id="tripList" class="trip-grid"></div>
+        <div id="emptyTripMessage" class="empty-message" style="display:none;">登録された旅行はありません。</div>
+      </section>
+
+      <section id="newTripFormCard" class="card hidden">
+        <div class="section-header">
+          <h2>旅行を追加</h2>
+          <button class="secondary small" onclick="hideNewTripForm()">閉じる</button>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>旅行名</label><input id="newTripTitle" type="text" placeholder="例：2026ロサンゼルス旅行"></div>
+          <div class="field"><label>行き先</label><input id="newTripPlace" type="text" placeholder="例：ロサンゼルス"></div>
+          <div class="field"><label>開始日</label><input id="newTripStart" type="date"></div>
+          <div class="field"><label>終了日</label><input id="newTripEnd" type="date"></div>
+          <div class="field">
+            <label>旅行区分</label>
+            <div class="radio-row">
+              <label class="radio-label"><input type="radio" name="newTripType" value="domestic" checked onchange="handleNewTripTypeChange()"> 国内旅行</label>
+              <label class="radio-label"><input type="radio" name="newTripType" value="international" onchange="handleNewTripTypeChange()"> 海外旅行</label>
+            </div>
+          </div>
+          <div class="field">
+            <label>複数通貨</label>
+            <div class="radio-row">
+              <label class="radio-label"><input type="radio" name="newMultiCurrency" value="no" checked> 使用しない</label>
+              <label class="radio-label"><input type="radio" name="newMultiCurrency" value="yes"> 使用する</label>
+            </div>
+          </div>
+          <div class="field" id="newLocalCurrencyField">
+            <label>現地通貨</label>
+            <select id="newLocalCurrency"></select>
+          </div>
+        </div>
+        <h3>参加者</h3>
+        <div id="newTripParticipantList" class="participant-list"></div>
+        <div class="toolbar">
+          <button onclick="addNewTripParticipant()">＋ 参加者を追加</button>
+          <button onclick="createTrip()">旅行を追加</button>
+          <button class="secondary" onclick="resetNewTripForm()">入力欄をリセット</button>
+        </div>
+        <p class="note">参加者はデフォルトで2名分の空欄を表示します。必要に応じて追加できます。</p>
+      </section>
+
+    </div>
+
+    <div id="tripView" class="hidden">
+      <div class="app-header">
+        <div>
+          <h1 id="tripHeading">旅行精算表</h1>
+          <p id="tripSubheading" class="subtitle"></p>
+        </div>
+        <div class="toolbar">
+          <button class="secondary" onclick="showMainView()">ホーム</button>
+          <button class="secondary" onclick="exportCSV()">CSV出力</button>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>旅行情報</h2>
+          <button id="tripInfoEditButton" class="small" onclick="startTripInfoEdit()">編集</button>
+        </div>
+        <div id="tripInfoDisplay"></div>
+        <div id="tripInfoEditArea" class="hidden">
+          <div class="form-grid">
+            <div class="field"><label>旅行名</label><input id="editTripTitle" type="text"></div>
+            <div class="field"><label>行き先</label><input id="editTripPlace" type="text"></div>
+            <div class="field"><label>開始日</label><input id="editTripStart" type="date"></div>
+            <div class="field"><label>終了日</label><input id="editTripEnd" type="date"></div>
+            <div class="field">
+              <label>旅行区分</label>
+              <div class="radio-row">
+                <label class="radio-label"><input type="radio" name="editTripType" value="domestic" onchange="handleEditTripTypeChange()"> 国内旅行</label>
+                <label class="radio-label"><input type="radio" name="editTripType" value="international" onchange="handleEditTripTypeChange()"> 海外旅行</label>
+              </div>
+            </div>
+            <div class="field">
+              <label>複数通貨</label>
+              <div class="radio-row">
+                <label class="radio-label"><input type="radio" name="editMultiCurrency" value="no"> 使用しない</label>
+                <label class="radio-label"><input type="radio" name="editMultiCurrency" value="yes"> 使用する</label>
+              </div>
+            </div>
+            <div class="field" id="editLocalCurrencyField">
+              <label>現地通貨</label>
+              <select id="editLocalCurrency"></select>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button onclick="confirmTripInfoEdit()">確定</button>
+            <button class="secondary" onclick="cancelTripInfoEdit()">キャンセル</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>参加者</h2>
+          <button id="participantEditButton" class="small" onclick="startParticipantEdit()">編集</button>
+        </div>
+        <div id="participantDisplay" class="participant-view"></div>
+        <div id="participantEditArea" class="hidden">
+          <div id="tripParticipantEditList" class="participant-list"></div>
+          <div class="toolbar">
+            <button onclick="addTripParticipant()">＋ 参加者を追加</button>
+            <button onclick="confirmParticipantEdit()">確定</button>
+            <button class="secondary" onclick="cancelParticipantEdit()">キャンセル</button>
+          </div>
+        </div>
+        <p class="note">通常は表示のみです。編集ボタンで既存情報の編集、参加者の追加・削除ができます。</p>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2>支出を入力</h2>
+          <button onclick="showExpenseInputForm()">支出を追加</button>
+        </div>
+        <div id="expenseInputArea" class="hidden">
+          <div id="inputList" class="input-list"></div>
+          <div class="toolbar">
+            <button onclick="addInputRow()">＋ 入力欄を追加</button>
+            <button onclick="registerInputRows()">追加</button>
+            <button class="secondary" onclick="resetInputRows()">入力欄をリセット</button>
+            <button class="secondary" onclick="hideExpenseInputForm()">閉じる</button>
+            <button class="danger" onclick="clearTripExpenses()">この旅行の出費を全削除</button>
+          </div>
+          <p class="note">海外旅行では現地通貨を選択できます。為替レートは取得を試みますが、必要に応じて手入力で修正できます。</p>
+        </div>
+      </section>
+
+      <div class="summary-grid">
+        <section class="card">
+          <h2>総合集計</h2>
+          <div class="summary-wrap"><table class="summary-table" id="summaryTable"></table></div>
+          <p class="note">参加者全員の支払額、共通費、個人出費、最終負担額を集計します。</p>
+        </section>
+
+        <section class="card">
+          <h2>共通精算表</h2>
+          <table class="summary-table">
+            <tbody>
+              <tr><th>未精算の共通費合計</th><td class="num" id="unsettledCommonTotal">0円</td></tr>
+              <tr><th>1人あたり負担額</th><td class="num" id="unsettledPerPerson">0円</td></tr>
+            </tbody>
+          </table>
+          <div id="settlementList" class="settlement-list"></div>
+          <p class="note">共通精算は日本円換算額で行います。直接日本円で登録した支出は、その日本円額をそのまま使用します。</p>
+        </section>
+      </div>
+
+      <section class="table-card">
+        <div class="table-header">
+          <h2>支出一覧</h2>
+          <span class="note">通常は表示のみ。修正する場合は「編集」を押してください。日付順に自動並び替えされます。</span>
+        </div>
+        <div class="table-wrap">
+          <table class="expense-table">
+            <thead>
+              <tr>
+                <th style="width: 110px;">日付</th>
+                <th style="width: 220px;">内容</th>
+                <th style="width: 110px;">分類</th>
+                <th style="width: 140px;">支払方法</th>
+                <th style="width: 100px;">支払状況</th>
+                <th style="width: 110px;">支払者</th>
+                <th style="width: 120px;">負担対象</th>
+                <th style="width: 210px;">通貨</th>
+                <th style="width: 110px;">現地通貨額</th>
+                <th style="width: 110px;">円換算レート</th>
+                <th style="width: 120px;">日本円入力額</th>
+                <th style="width: 130px;">精算用日本円額</th>
+                <th style="width: 100px;">精算状態</th>
+                <th style="width: 220px;">メモ</th>
+                <th style="width: 150px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="expenseBody"></tbody>
+          </table>
+          <div id="emptyMessage" class="empty-message" style="display:none;">登録された支出はありません。</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    function setupPWA() {
+      const svgIcon = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+          <rect width="1024" height="1024" rx="220" fill="#2563eb"/>
+          <rect x="210" y="250" width="604" height="524" rx="70" fill="#ffffff"/>
+          <rect x="278" y="338" width="468" height="58" rx="29" fill="#dbeafe"/>
+          <rect x="278" y="450" width="210" height="54" rx="27" fill="#2563eb"/>
+          <rect x="536" y="450" width="210" height="54" rx="27" fill="#93c5fd"/>
+          <rect x="278" y="558" width="468" height="54" rx="27" fill="#bfdbfe"/>
+          <path d="M350 705h324" stroke="#2563eb" stroke-width="58" stroke-linecap="round"/>
+        </svg>`;
+      const iconUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgIcon);
+
+      const appleIcon = document.createElement("link");
+      appleIcon.rel = "apple-touch-icon";
+      appleIcon.href = iconUrl;
+      document.head.appendChild(appleIcon);
+
+      const manifest = {
+        name: "旅行費用精算ツール",
+        short_name: "旅行精算",
+        description: "旅行ごとの支出、通貨、参加者、精算額を管理するツール",
+        start_url: ".",
+        scope: ".",
+        display: "standalone",
+        background_color: "#f5f7fb",
+        theme_color: "#2563eb",
+        icons: [
+          { src: iconUrl, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" },
+          { src: iconUrl, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }
+        ]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" });
+      const manifestUrl = URL.createObjectURL(manifestBlob);
+      const manifestLink = document.createElement("link");
+      manifestLink.rel = "manifest";
+      manifestLink.href = manifestUrl;
+      document.head.appendChild(manifestLink);
+    }
+
+    setupPWA();
+    const APP_KEY = "travelSettlementTrips_v6";
+    const categories = ["交通", "宿泊", "食事", "カフェ", "観光", "娯楽", "買い物", "ドラッグストア", "通信", "手数料", "チップ", "荷物", "洗濯", "駐車場", "その他"];
+    const paymentMethods = ["現金", "クレカ（三井住友）", "クレカ（PayPay）", "Wiseカード", "クレカ（いずみ）"];
+    const paymentStatuses = ["未確定", "確定済み"];
+    const settlementStatuses = ["未精算", "精算済", "対象外"];
+    const majorCurrencyCodes = ["JPY", "USD", "EUR", "GBP", "CNY", "KRW", "TWD", "HKD", "SGD", "AUD", "CAD", "CHF", "THB", "MYR", "PHP", "IDR", "VND"];
+    const exchangeRateCache = {};
+
+    const currencyList = [
+      { country: "日本", code: "JPY", symbol: "¥" },
+      { country: "アメリカ", code: "USD", symbol: "$" },
+      { country: "ユーロ圏", code: "EUR", symbol: "€" },
+      { country: "イギリス", code: "GBP", symbol: "£" },
+      { country: "中国", code: "CNY", symbol: "¥" },
+      { country: "韓国", code: "KRW", symbol: "₩" },
+      { country: "台湾", code: "TWD", symbol: "NT$" },
+      { country: "香港", code: "HKD", symbol: "HK$" },
+      { country: "シンガポール", code: "SGD", symbol: "S$" },
+      { country: "オーストラリア", code: "AUD", symbol: "A$" },
+      { country: "カナダ", code: "CAD", symbol: "C$" },
+      { country: "スイス", code: "CHF", symbol: "CHF" },
+      { country: "タイ", code: "THB", symbol: "฿" },
+      { country: "マレーシア", code: "MYR", symbol: "RM" },
+      { country: "フィリピン", code: "PHP", symbol: "₱" },
+      { country: "インドネシア", code: "IDR", symbol: "Rp" },
+      { country: "ベトナム", code: "VND", symbol: "₫" },
+      { country: "インド", code: "INR", symbol: "₹" },
+      { country: "ニュージーランド", code: "NZD", symbol: "NZ$" },
+      { country: "メキシコ", code: "MXN", symbol: "$" },
+      { country: "南アフリカ", code: "ZAR", symbol: "R" },
+      { country: "ブラジル", code: "BRL", symbol: "R$" },
+      { country: "トルコ", code: "TRY", symbol: "₺" },
+      { country: "アラブ首長国連邦", code: "AED", symbol: "د.إ" },
+      { country: "サウジアラビア", code: "SAR", symbol: "﷼" },
+      { country: "スウェーデン", code: "SEK", symbol: "kr" },
+      { country: "ノルウェー", code: "NOK", symbol: "kr" },
+      { country: "デンマーク", code: "DKK", symbol: "kr" },
+      { country: "ポーランド", code: "PLN", symbol: "zł" },
+      { country: "チェコ", code: "CZK", symbol: "Kč" },
+      { country: "ハンガリー", code: "HUF", symbol: "Ft" },
+      { country: "イスラエル", code: "ILS", symbol: "₪" },
+      { country: "エジプト", code: "EGP", symbol: "E£" },
+      { country: "チリ", code: "CLP", symbol: "$" },
+      { country: "アルゼンチン", code: "ARS", symbol: "$" }
+    ];
+
+    let trips = [];
+    let currentTripId = null;
+    let inputRows = [];
+    let editingIds = new Set();
+    let newTripParticipants = ["", ""];
+    let editingParticipants = [];
+
+    function generateId(prefix = "id") {
+      return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function getCurrentTrip() {
+      return trips.find(trip => trip.id === currentTripId) || null;
+    }
+
+    function getParticipants() {
+      const trip = getCurrentTrip();
+      return trip ? trip.participants : [];
+    }
+
+    function getExpenseTypes() {
+      return ["共通", ...getParticipants().map(name => `${name}のみ`)];
+    }
+
+    function getCurrencyLabel(code) {
+      const item = currencyList.find(c => c.code === code);
+      return item ? `${item.country}（${item.symbol} / ${item.code}）` : code;
+    }
+
+    function getSortedCurrencyCodes() {
+      return currencyList.map(c => c.code).sort((a, b) => {
+        const ai = majorCurrencyCodes.indexOf(a);
+        const bi = majorCurrencyCodes.indexOf(b);
+        if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        return getCurrencyLabel(a).localeCompare(getCurrencyLabel(b), "ja");
+      });
+    }
+
+    function getAvailableCurrencies(trip = getCurrentTrip()) {
+      if (!trip) return ["JPY"];
+      if (trip.tripType === "domestic" && !trip.multiCurrency) return ["JPY"];
+      const codes = new Set(["JPY"]);
+      if (trip.localCurrency) codes.add(trip.localCurrency);
+      if (trip.multiCurrency || trip.tripType === "international") currencyList.forEach(item => codes.add(item.code));
+      return [...codes].sort((a, b) => {
+        const ai = majorCurrencyCodes.indexOf(a);
+        const bi = majorCurrencyCodes.indexOf(b);
+        if (ai !== -1 || bi !== -1) return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+        return getCurrencyLabel(a).localeCompare(getCurrencyLabel(b), "ja");
+      });
+    }
+
+    function makeOptions(options, selectedValue) {
+      return options.map(option => `<option value="${escapeHTML(option)}" ${option === selectedValue ? "selected" : ""}>${escapeHTML(option)}</option>`).join("");
+    }
+
+    function makeCurrencyOptions(selectedValue) {
+      return getAvailableCurrencies().map(code => `<option value="${escapeHTML(code)}" ${code === selectedValue ? "selected" : ""}>${escapeHTML(getCurrencyLabel(code))}</option>`).join("");
+    }
+
+    function makeAllCurrencyOptions(selectedValue) {
+      return getSortedCurrencyCodes().map(code => `<option value="${escapeHTML(code)}" ${code === selectedValue ? "selected" : ""}>${escapeHTML(getCurrencyLabel(code))}</option>`).join("");
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    }
+
+    function getRadioValue(name) {
+      const checked = document.querySelector(`input[name="${name}"]:checked`);
+      return checked ? checked.value : "";
+    }
+
+    function saveApp() {
+      localStorage.setItem(APP_KEY, JSON.stringify(trips));
+    }
+
+    function loadApp() {
+      const saved = localStorage.getItem(APP_KEY);
+      if (!saved) {
+        trips = [];
+        return;
+      }
+      try {
+        const parsed = JSON.parse(saved);
+        trips = Array.isArray(parsed) ? parsed.map(normalizeTrip) : [];
+      } catch (error) {
+        trips = [];
+      }
+    }
+
+    function normalizeParticipants(list) {
+      const cleaned = list.map(name => String(name || "").trim()).filter(Boolean);
+      const unique = [];
+      cleaned.forEach(name => {
+        if (!unique.includes(name)) unique.push(name);
+      });
+      return unique;
+    }
+
+    function normalizeTrip(trip) {
+      const participants = normalizeParticipants(trip.participants || []);
+      return {
+        id: trip.id || generateId("trip"),
+        title: trip.title || "無題の旅行",
+        place: trip.place || "",
+        startDate: trip.startDate || "",
+        endDate: trip.endDate || "",
+        tripType: trip.tripType || "domestic",
+        multiCurrency: Boolean(trip.multiCurrency),
+        localCurrency: trip.localCurrency || (trip.tripType === "international" ? "USD" : "JPY"),
+        participants,
+        expenses: Array.isArray(trip.expenses) ? trip.expenses.map(row => normalizeExpenseRow(row, participants, trip)) : []
+      };
+    }
+
+    function normalizeExpenseRow(row, participants = getParticipants(), trip = getCurrentTrip()) {
+      const available = trip ? getAvailableCurrencies(trip) : ["JPY"];
+      const defaultCurrency = trip && trip.tripType === "international" ? (trip.localCurrency || "USD") : "JPY";
+      const currency = available.includes(row.currency) ? row.currency : defaultCurrency;
+      const payer = participants.includes(row.payer) ? row.payer : (participants[0] || "");
+      const expenseTypes = ["共通", ...participants.map(name => `${name}のみ`)];
+      const expenseType = expenseTypes.includes(row.expenseType) ? row.expenseType : "共通";
+      return {
+        id: row.id || generateId("exp"),
+        date: row.date ?? "",
+        description: row.description ?? "",
+        category: categories.includes(row.category) ? row.category : "交通",
+        paymentMethod: paymentMethods.includes(row.paymentMethod) ? row.paymentMethod : "現金",
+        paymentStatus: paymentStatuses.includes(row.paymentStatus) ? row.paymentStatus : "未確定",
+        payer,
+        expenseType,
+        currency,
+        amount: row.amount ?? "",
+        exchangeRate: currency === "JPY" ? 1 : (row.exchangeRate ?? ""),
+        jpyAmount: row.jpyAmount ?? "",
+        settlementStatus: settlementStatuses.includes(row.settlementStatus) ? row.settlementStatus : "未精算",
+        note: row.note ?? ""
+      };
+    }
+
+    function createEmptyExpenseRow() {
+      const trip = getCurrentTrip();
+      const participants = getParticipants();
+      const defaultCurrency = !trip || trip.tripType === "domestic" ? "JPY" : (trip.localCurrency || "USD");
+      return {
+        id: generateId("exp"),
+        date: "",
+        description: "",
+        category: "交通",
+        paymentMethod: "現金",
+        paymentStatus: "未確定",
+        payer: participants[0] || "",
+        expenseType: "共通",
+        currency: defaultCurrency,
+        amount: "",
+        exchangeRate: defaultCurrency === "JPY" ? 1 : "",
+        jpyAmount: "",
+        settlementStatus: "未精算",
+        note: ""
+      };
+    }
+
+    function formatYen(value) {
+      const num = Math.round(Number(value) || 0);
+      return `${num.toLocaleString("ja-JP")}円`;
+    }
+
+    function formatNumber(value) {
+      if (value === "" || value === null || value === undefined) return "";
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toLocaleString("ja-JP") : "";
+    }
+
+    function parseNumber(value) {
+      if (value === "" || value === null || value === undefined) return 0;
+      const num = Number(value);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function calculateJPY(row) {
+      if (row.jpyAmount !== "" && row.jpyAmount !== null && row.jpyAmount !== undefined) {
+        return Math.round(parseNumber(row.jpyAmount));
+      }
+      if (row.amount === "" || row.amount === null || row.amount === undefined) return "";
+      const amount = parseNumber(row.amount);
+      const rate = row.currency === "JPY" ? 1 : parseNumber(row.exchangeRate);
+      return Math.round(amount * rate);
+    }
+
+    async function fetchJPYRate(code) {
+      if (!code || code === "JPY") return 1;
+      if (exchangeRateCache[code]) return exchangeRateCache[code];
+      try {
+        const response = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(code)}`);
+        const data = await response.json();
+        const rate = data && data.rates && data.rates.JPY ? Number(data.rates.JPY) : null;
+        if (rate && Number.isFinite(rate)) {
+          exchangeRateCache[code] = rate;
+          return rate;
+        }
+      } catch (error) {
+        console.warn("為替レートを取得できませんでした。手入力してください。", error);
+      }
+      return "";
+    }
+
+    async function setDefaultRateForInput(index) {
+      const row = inputRows[index];
+      if (!row) return;
+      if (row.currency === "JPY") {
+        row.exchangeRate = 1;
+        renderInputRows();
+        return;
+      }
+      const rate = await fetchJPYRate(row.currency);
+      if (rate !== "") row.exchangeRate = Number(rate.toFixed(4));
+      renderInputRows();
+    }
+
+    async function setDefaultRateForExpense(index) {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      const row = trip.expenses[index];
+      if (!row) return;
+      if (row.currency === "JPY") {
+        row.exchangeRate = 1;
+        renderTable();
+        return;
+      }
+      const rate = await fetchJPYRate(row.currency);
+      if (rate !== "") row.exchangeRate = Number(rate.toFixed(4));
+      saveApp();
+      renderTable();
+    }
+
+    function calculateSummary(trip = getCurrentTrip()) {
+      const participants = trip ? (trip.participants || []) : [];
+      const result = {};
+      participants.forEach(name => {
+        result[name] = {
+          totalPaid: 0,
+          commonPaidAll: 0,
+          personalExpense: 0,
+          actualExpense: 0,
+          unsettledCommonPaid: 0,
+          unsettledCommonDiff: 0
+        };
+      });
+
+      let totalCommonAll = 0;
+      let unsettledCommonTotal = 0;
+
+      if (!trip) return { participants, result, totalCommonAll, actualCommonShare: 0, unsettledCommonTotal, unsettledShare: 0 };
+
+      trip.expenses.forEach(row => {
+        const jpy = calculateJPY(row);
+        if (jpy === "") return;
+        if (result[row.payer]) result[row.payer].totalPaid += jpy;
+
+        if (row.expenseType === "共通") {
+          totalCommonAll += jpy;
+          if (result[row.payer]) result[row.payer].commonPaidAll += jpy;
+          if (row.settlementStatus === "未精算") {
+            unsettledCommonTotal += jpy;
+            if (result[row.payer]) result[row.payer].unsettledCommonPaid += jpy;
+          }
+        } else {
+          const owner = row.expenseType.replace(/のみ$/, "");
+          if (result[owner]) result[owner].personalExpense += jpy;
+        }
+      });
+
+      const actualCommonShare = participants.length > 0 ? totalCommonAll / participants.length : 0;
+      const unsettledShare = participants.length > 0 ? unsettledCommonTotal / participants.length : 0;
+      participants.forEach(name => {
+        result[name].actualExpense = result[name].personalExpense + actualCommonShare;
+        result[name].unsettledCommonDiff = result[name].unsettledCommonPaid - unsettledShare;
+      });
+
+      return { participants, result, totalCommonAll, actualCommonShare, unsettledCommonTotal, unsettledShare };
+    }
+
+    function calculateSettlements(summary) {
+      if (summary.participants.length <= 1) return [];
+      const creditors = [];
+      const debtors = [];
+
+      summary.participants.forEach(name => {
+        const diff = Math.round(summary.result[name].unsettledCommonDiff);
+        if (diff > 0) creditors.push({ name, amount: diff });
+        if (diff < 0) debtors.push({ name, amount: Math.abs(diff) });
+      });
+
+      const settlements = [];
+      let i = 0;
+      let j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        const amount = Math.min(debtors[i].amount, creditors[j].amount);
+        if (amount > 0) settlements.push({ from: debtors[i].name, to: creditors[j].name, amount });
+        debtors[i].amount -= amount;
+        creditors[j].amount -= amount;
+        if (debtors[i].amount === 0) i += 1;
+        if (creditors[j].amount === 0) j += 1;
+      }
+      return settlements;
+    }
+
+    function sortExpensesByDate(trip = getCurrentTrip()) {
+      if (!trip) return;
+      trip.expenses.sort((a, b) => {
+        const dateA = a.date || "9999-12-31";
+        const dateB = b.date || "9999-12-31";
+        if (dateA !== dateB) return dateA.localeCompare(dateB);
+        return String(a.description).localeCompare(String(b.description), "ja");
+      });
+    }
+
+    function handleNewTripTypeChange() {
+      const type = getRadioValue("newTripType");
+      const currencyField = document.getElementById("newLocalCurrencyField");
+      const localCurrency = document.getElementById("newLocalCurrency");
+      currencyField.classList.toggle("hidden", type !== "international");
+      if (type === "international") {
+        document.querySelector('input[name="newMultiCurrency"][value="yes"]').checked = true;
+        if (!localCurrency.innerHTML.trim()) localCurrency.innerHTML = makeAllCurrencyOptions("USD");
+      } else {
+        document.querySelector('input[name="newMultiCurrency"][value="no"]').checked = true;
+      }
+    }
+
+    function handleEditTripTypeChange() {
+      const type = getRadioValue("editTripType");
+      const currencyField = document.getElementById("editLocalCurrencyField");
+      const localCurrency = document.getElementById("editLocalCurrency");
+      currencyField.classList.toggle("hidden", type !== "international");
+      if (type === "international") {
+        document.querySelector('input[name="editMultiCurrency"][value="yes"]').checked = true;
+        if (!localCurrency.innerHTML.trim()) localCurrency.innerHTML = makeAllCurrencyOptions("USD");
+      } else {
+        document.querySelector('input[name="editMultiCurrency"][value="no"]').checked = true;
+      }
+    }
+
+    function initCurrencySelectors() {
+      const newLocalCurrency = document.getElementById("newLocalCurrency");
+      const editLocalCurrency = document.getElementById("editLocalCurrency");
+      if (newLocalCurrency && !newLocalCurrency.innerHTML.trim()) newLocalCurrency.innerHTML = makeAllCurrencyOptions("USD");
+      if (editLocalCurrency && !editLocalCurrency.innerHTML.trim()) editLocalCurrency.innerHTML = makeAllCurrencyOptions("USD");
+    }
+
+    function showNewTripForm() {
+      document.getElementById("newTripFormCard").classList.remove("hidden");
+    }
+
+    function hideNewTripForm() {
+      document.getElementById("newTripFormCard").classList.add("hidden");
+    }
+
+    function resetNewTripForm() {
+      document.getElementById("newTripTitle").value = "";
+      document.getElementById("newTripPlace").value = "";
+      document.getElementById("newTripStart").value = "";
+      document.getElementById("newTripEnd").value = "";
+      document.querySelector('input[name="newTripType"][value="domestic"]').checked = true;
+      document.querySelector('input[name="newMultiCurrency"][value="no"]').checked = true;
+      document.getElementById("newLocalCurrency").innerHTML = makeAllCurrencyOptions("USD");
+      newTripParticipants = ["", ""];
+      renderNewTripParticipants();
+      handleNewTripTypeChange();
+    }
+
+    function renderNewTripParticipants() {
+      const box = document.getElementById("newTripParticipantList");
+      box.innerHTML = "";
+      newTripParticipants.forEach((name, index) => {
+        const div = document.createElement("div");
+        div.className = "participant-item";
+        div.innerHTML = `
+          <div class="field">
+            <label>参加者${index + 1}</label>
+            <input type="text" value="${escapeHTML(name)}" placeholder="参加者名を入力" onchange="updateNewTripParticipant(${index}, this.value)">
+          </div>
+          <button class="danger icon" onclick="removeNewTripParticipant(${index})">－</button>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+    function updateNewTripParticipant(index, value) {
+      newTripParticipants[index] = value;
+    }
+
+    function addNewTripParticipant() {
+      newTripParticipants.push("");
+      renderNewTripParticipants();
+    }
+
+    function removeNewTripParticipant(index) {
+      if (newTripParticipants.length <= 1) {
+        alert("参加者欄は最低1つ必要です。");
+        return;
+      }
+      newTripParticipants.splice(index, 1);
+      renderNewTripParticipants();
+    }
+
+    function createTrip() {
+      const title = document.getElementById("newTripTitle").value.trim();
+      const place = document.getElementById("newTripPlace").value.trim();
+      const startDate = document.getElementById("newTripStart").value;
+      const endDate = document.getElementById("newTripEnd").value;
+      const tripType = getRadioValue("newTripType") || "domestic";
+      const multiCurrency = getRadioValue("newMultiCurrency") === "yes";
+      const localCurrency = tripType === "international" ? document.getElementById("newLocalCurrency").value : "JPY";
+      const participants = normalizeParticipants(newTripParticipants);
+
+      if (!title) {
+        alert("旅行名を入力してください。");
+        return;
+      }
+      if (participants.length === 0) {
+        alert("参加者を1名以上入力してください。");
+        return;
+      }
+
+      trips.push({ id: generateId("trip"), title, place, startDate, endDate, tripType, multiCurrency, localCurrency, participants, expenses: [] });
+      saveApp();
+      resetNewTripForm();
+      hideNewTripForm();
+      renderTripList();
+    }
+
+    function deleteTrip(id) {
+      const trip = trips.find(item => item.id === id);
+      if (!trip) return;
+      if (!confirm(`「${trip.title}」を削除します。よろしいですか？`)) return;
+      trips = trips.filter(item => item.id !== id);
+      saveApp();
+      renderTripList();
+    }
+
+    function renderTripList() {
+      const list = document.getElementById("tripList");
+      const empty = document.getElementById("emptyTripMessage");
+      list.innerHTML = "";
+      empty.style.display = trips.length === 0 ? "block" : "none";
+
+      trips.forEach(trip => {
+        const summary = calculateSummary(trip);
+        const div = document.createElement("div");
+        div.className = "trip-card";
+        div.innerHTML = `
+          <div class="trip-card-title">${escapeHTML(trip.title)}</div>
+          <div class="trip-meta">行き先：${escapeHTML(trip.place || "未設定")}</div>
+          <div class="trip-meta">期間：${escapeHTML(trip.startDate || "未設定")} ～ ${escapeHTML(trip.endDate || "未設定")}</div>
+          <div class="trip-meta">旅行区分：${trip.tripType === "international" ? "海外旅行" : "国内旅行"} / 複数通貨：${trip.multiCurrency ? "使用する" : "使用しない"}</div>
+          <div class="trip-meta">参加者：${escapeHTML(trip.participants.length ? trip.participants.join("、") : "未設定")}</div>
+          <div class="trip-meta">支出件数：${trip.expenses.length}件 / 共通費：${formatYen(summary.totalCommonAll)}</div>
+          <div class="toolbar">
+            <button class="small" onclick="openTrip('${trip.id}')">記録</button>
+            <button class="small danger" onclick="deleteTrip('${trip.id}')">削除</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function showMainView() {
+      currentTripId = null;
+      editingIds.clear();
+      document.getElementById("mainView").classList.remove("hidden");
+      document.getElementById("tripView").classList.add("hidden");
+      renderTripList();
+    }
+
+    function openTrip(id) {
+      currentTripId = id;
+      editingIds.clear();
+      inputRows = [createEmptyExpenseRow()];
+      document.getElementById("mainView").classList.add("hidden");
+      document.getElementById("tripView").classList.remove("hidden");
+      hideExpenseInputForm();
+      renderTripView();
+      setDefaultRateForInput(0);
+    }
+
+    function renderTripView() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      document.getElementById("tripHeading").textContent = `${trip.title}　旅行精算表`;
+      document.getElementById("tripSubheading").textContent = `行き先：${trip.place || "未設定"} / 期間：${trip.startDate || "未設定"} ～ ${trip.endDate || "未設定"}`;
+      renderTripInfoDisplay();
+      renderParticipantDisplay();
+      renderInputRows();
+      renderTable();
+    }
+
+    function renderTripInfoDisplay() {
+      const trip = getCurrentTrip();
+      document.getElementById("tripInfoDisplay").innerHTML = `
+        <div class="participant-view">
+          <span class="tag">旅行名：${escapeHTML(trip.title)}</span>
+          <span class="tag">行き先：${escapeHTML(trip.place || "未設定")}</span>
+          <span class="tag">期間：${escapeHTML(trip.startDate || "未設定")} ～ ${escapeHTML(trip.endDate || "未設定")}</span>
+          <span class="tag">${trip.tripType === "international" ? "海外旅行" : "国内旅行"}</span>
+          <span class="tag">複数通貨：${trip.multiCurrency ? "使用する" : "使用しない"}</span>
+          <span class="tag">基準通貨：${escapeHTML(getCurrencyLabel(trip.localCurrency || "JPY"))}</span>
+        </div>
+      `;
+      document.getElementById("tripInfoDisplay").classList.remove("hidden");
+      document.getElementById("tripInfoEditArea").classList.add("hidden");
+      document.getElementById("tripInfoEditButton").classList.remove("hidden");
+    }
+
+    function startTripInfoEdit() {
+      const trip = getCurrentTrip();
+      document.getElementById("editTripTitle").value = trip.title;
+      document.getElementById("editTripPlace").value = trip.place;
+      document.getElementById("editTripStart").value = trip.startDate;
+      document.getElementById("editTripEnd").value = trip.endDate;
+      document.querySelector(`input[name="editTripType"][value="${trip.tripType}"]`).checked = true;
+      document.querySelector(`input[name="editMultiCurrency"][value="${trip.multiCurrency ? "yes" : "no"}"]`).checked = true;
+      document.getElementById("editLocalCurrency").innerHTML = makeAllCurrencyOptions(trip.localCurrency || "USD");
+      document.getElementById("tripInfoDisplay").classList.add("hidden");
+      document.getElementById("tripInfoEditArea").classList.remove("hidden");
+      document.getElementById("tripInfoEditButton").classList.add("hidden");
+      handleEditTripTypeChange();
+    }
+
+    function confirmTripInfoEdit() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      trip.title = document.getElementById("editTripTitle").value.trim() || "無題の旅行";
+      trip.place = document.getElementById("editTripPlace").value.trim();
+      trip.startDate = document.getElementById("editTripStart").value;
+      trip.endDate = document.getElementById("editTripEnd").value;
+      trip.tripType = getRadioValue("editTripType") || "domestic";
+      trip.multiCurrency = getRadioValue("editMultiCurrency") === "yes";
+      trip.localCurrency = trip.tripType === "international" ? document.getElementById("editLocalCurrency").value : "JPY";
+      trip.expenses = trip.expenses.map(row => normalizeExpenseRow(row, trip.participants, trip));
+      inputRows = inputRows.map(row => normalizeExpenseRow(row, trip.participants, trip));
+      saveApp();
+      renderTripView();
+      setDefaultRateForInput(0);
+    }
+
+    function cancelTripInfoEdit() {
+      renderTripInfoDisplay();
+    }
+
+    function renderParticipantDisplay() {
+      const trip = getCurrentTrip();
+      const display = document.getElementById("participantDisplay");
+      display.innerHTML = trip.participants.length ? trip.participants.map(name => `<span class="tag">${escapeHTML(name)}</span>`).join("") : `<span class="tag">未設定</span>`;
+      document.getElementById("participantEditArea").classList.add("hidden");
+      document.getElementById("participantDisplay").classList.remove("hidden");
+      document.getElementById("participantEditButton").classList.remove("hidden");
+    }
+
+    function startParticipantEdit() {
+      const trip = getCurrentTrip();
+      editingParticipants = [...trip.participants];
+      if (editingParticipants.length === 0) editingParticipants = [""];
+      document.getElementById("participantDisplay").classList.add("hidden");
+      document.getElementById("participantEditButton").classList.add("hidden");
+      document.getElementById("participantEditArea").classList.remove("hidden");
+      renderTripParticipantEditList();
+    }
+
+    function renderTripParticipantEditList() {
+      const box = document.getElementById("tripParticipantEditList");
+      box.innerHTML = "";
+      editingParticipants.forEach((name, index) => {
+        const div = document.createElement("div");
+        div.className = "participant-item";
+        div.innerHTML = `
+          <div class="field">
+            <label>参加者${index + 1}</label>
+            <input type="text" value="${escapeHTML(name)}" placeholder="参加者名を入力" onchange="updateTripParticipantDraft(${index}, this.value)">
+          </div>
+          <button class="danger icon" onclick="removeTripParticipant(${index})">－</button>
+        `;
+        box.appendChild(div);
+      });
+    }
+
+    function updateTripParticipantDraft(index, value) {
+      editingParticipants[index] = value;
+    }
+
+    function addTripParticipant() {
+      editingParticipants.push("");
+      renderTripParticipantEditList();
+    }
+
+    function removeTripParticipant(index) {
+      if (editingParticipants.length <= 1) {
+        alert("参加者欄は最低1つ必要です。");
+        return;
+      }
+      editingParticipants.splice(index, 1);
+      renderTripParticipantEditList();
+    }
+
+    function confirmParticipantEdit() {
+      const trip = getCurrentTrip();
+      const oldParticipants = [...trip.participants];
+      const newParticipants = normalizeParticipants(editingParticipants);
+      if (newParticipants.length === 0) {
+        alert("参加者を1名以上入力してください。");
+        return;
+      }
+
+      const renamedMap = new Map();
+      oldParticipants.forEach((oldName, index) => {
+        if (newParticipants[index]) renamedMap.set(oldName, newParticipants[index]);
+      });
+
+      trip.participants = newParticipants;
+      trip.expenses = trip.expenses.map(row => {
+        let updated = { ...row };
+        if (renamedMap.has(updated.payer)) updated.payer = renamedMap.get(updated.payer);
+        oldParticipants.forEach((oldName, index) => {
+          const oldType = `${oldName}のみ`;
+          const newName = newParticipants[index];
+          if (updated.expenseType === oldType && newName) updated.expenseType = `${newName}のみ`;
+        });
+        return normalizeExpenseRow(updated, newParticipants, trip);
+      });
+      inputRows = inputRows.map(row => normalizeExpenseRow(row, newParticipants, trip));
+      saveApp();
+      renderTripView();
+    }
+
+    function cancelParticipantEdit() {
+      editingParticipants = [];
+      renderParticipantDisplay();
+    }
+
+    function showExpenseInputForm() {
+      document.getElementById("expenseInputArea").classList.remove("hidden");
+      if (inputRows.length === 0) resetInputRows();
+    }
+
+    function hideExpenseInputForm() {
+      document.getElementById("expenseInputArea").classList.add("hidden");
+    }
+
+    function renderInputRows() {
+      const inputList = document.getElementById("inputList");
+      inputList.innerHTML = "";
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      const participants = getParticipants();
+      const expenseTypes = getExpenseTypes();
+
+      inputRows.forEach((row, index) => {
+        row = normalizeExpenseRow(row, participants, trip);
+        inputRows[index] = row;
+        const div = document.createElement("div");
+        div.className = "input-row";
+        div.innerHTML = `
+          <div class="field"><label>日付</label><input type="date" value="${escapeHTML(row.date)}" onchange="updateInputRow(${index}, 'date', this.value)"></div>
+          <div class="field"><label>内容</label><input type="text" value="${escapeHTML(row.description)}" placeholder="例：昼食" onchange="updateInputRow(${index}, 'description', this.value)"></div>
+          <div class="field"><label>分類</label><select onchange="updateInputRow(${index}, 'category', this.value)">${makeOptions(categories, row.category)}</select></div>
+          <div class="field"><label>支払方法</label><select onchange="updateInputRow(${index}, 'paymentMethod', this.value)">${makeOptions(paymentMethods, row.paymentMethod)}</select></div>
+          <div class="field"><label>支払状況</label><select onchange="updateInputRow(${index}, 'paymentStatus', this.value)">${makeOptions(paymentStatuses, row.paymentStatus)}</select></div>
+          <div class="field"><label>支払者</label><select onchange="updateInputRow(${index}, 'payer', this.value)">${makeOptions(participants, row.payer)}</select></div>
+          <div class="field"><label>負担対象</label><select onchange="updateInputRow(${index}, 'expenseType', this.value)">${makeOptions(expenseTypes, row.expenseType)}</select></div>
+          <div class="field"><label>通貨</label><select onchange="updateInputRow(${index}, 'currency', this.value); setDefaultRateForInput(${index});">${makeCurrencyOptions(row.currency)}</select></div>
+          <div class="field"><label>現地通貨額</label><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
+          <div class="field"><label>円換算レート</label><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} oninput="updateInputRow(${index}, 'exchangeRate', this.value)"></div>
+          <div class="field"><label>日本円入力額</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" oninput="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
+          <div class="field"><label>精算状態</label><select onchange="updateInputRow(${index}, 'settlementStatus', this.value)">${makeOptions(settlementStatuses, row.settlementStatus)}</select></div>
+          <div class="field"><label>メモ</label><input type="text" value="${escapeHTML(row.note)}" placeholder="任意" onchange="updateInputRow(${index}, 'note', this.value)"></div>
+          <div class="field"><label>&nbsp;</label><button class="danger icon" onclick="removeInputRow(${index})">－</button></div>
+        `;
+        inputList.appendChild(div);
+      });
+    }
+
+    function updateInputRow(index, key, value) {
+      inputRows[index][key] = value;
+      if (key === "currency" && value === "JPY") inputRows[index].exchangeRate = 1;
+      renderInputRows();
+    }
+
+    function addInputRow() {
+      inputRows.push(createEmptyExpenseRow());
+      const index = inputRows.length - 1;
+      renderInputRows();
+      setDefaultRateForInput(index);
+    }
+
+    function removeInputRow(index) {
+      if (inputRows.length === 1) inputRows = [createEmptyExpenseRow()];
+      else inputRows.splice(index, 1);
+      renderInputRows();
+    }
+
+    function resetInputRows() {
+      inputRows = [createEmptyExpenseRow()];
+      renderInputRows();
+      setDefaultRateForInput(0);
+    }
+
+    function registerInputRows() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      const validRows = inputRows
+        .map(row => normalizeExpenseRow(row, trip.participants, trip))
+        .filter(row => row.date || row.description || row.amount !== "" || row.jpyAmount !== "");
+
+      if (validRows.length === 0) {
+        alert("登録する内容を入力してください。");
+        return;
+      }
+
+      trip.expenses.push(...validRows.map(row => ({ ...row, id: generateId("exp") })));
+      sortExpensesByDate(trip);
+      saveApp();
+      resetInputRows();
+      hideExpenseInputForm();
+      renderTable();
+    }
+
+    function renderTable() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      const tbody = document.getElementById("expenseBody");
+      const emptyMessage = document.getElementById("emptyMessage");
+      tbody.innerHTML = "";
+
+      sortExpensesByDate(trip);
+      emptyMessage.style.display = trip.expenses.length === 0 ? "block" : "none";
+
+      trip.expenses.forEach(row => {
+        const index = trip.expenses.findIndex(item => item.id === row.id);
+        const jpy = calculateJPY(row);
+        const isEditing = editingIds.has(row.id);
+        const tr = document.createElement("tr");
+        tr.className = isEditing ? "editing" : "";
+        tr.innerHTML = isEditing ? renderEditableRow(row, index, jpy) : renderDisplayRow(row, index, jpy);
+        tbody.appendChild(tr);
+      });
+
+      updateSummary();
+    }
+
+    function renderDisplayRow(row, index, jpy) {
+      return `
+        <td data-label="日付">${escapeHTML(row.date)}</td>
+        <td data-label="内容">${escapeHTML(row.description)}</td>
+        <td data-label="分類">${escapeHTML(row.category)}</td>
+        <td data-label="支払方法">${escapeHTML(row.paymentMethod)}</td>
+        <td data-label="支払状況">${escapeHTML(row.paymentStatus)}</td>
+        <td data-label="支払者">${escapeHTML(row.payer)}</td>
+        <td data-label="負担対象">${escapeHTML(row.expenseType)}</td>
+        <td data-label="通貨">${escapeHTML(getCurrencyLabel(row.currency))}</td>
+        <td data-label="現地通貨額" class="num">${formatNumber(row.amount)}</td>
+        <td data-label="円換算レート" class="num">${row.currency === "JPY" ? "1" : formatNumber(row.exchangeRate)}</td>
+        <td data-label="日本円入力額" class="num">${row.jpyAmount === "" ? "" : formatYen(row.jpyAmount)}</td>
+        <td data-label="精算用日本円額" class="jpy-cell">${jpy === "" ? "" : formatYen(jpy)}</td>
+        <td data-label="精算状態">${escapeHTML(row.settlementStatus)}</td>
+        <td data-label="メモ">${escapeHTML(row.note)}</td>
+        <td data-label="操作"><button class="small" onclick="startEdit('${row.id}')">編集</button><button class="small danger" onclick="deleteRow(${index})">削除</button></td>
+      `;
+    }
+
+    function renderEditableRow(row, index, jpy) {
+      const participants = getParticipants();
+      const expenseTypes = getExpenseTypes();
+      return `
+        <td data-label="日付"><input type="date" value="${escapeHTML(row.date)}" onchange="updateRow(${index}, 'date', this.value)"></td>
+        <td data-label="内容"><input type="text" value="${escapeHTML(row.description)}" onchange="updateRow(${index}, 'description', this.value)"></td>
+        <td data-label="分類"><select onchange="updateRow(${index}, 'category', this.value)">${makeOptions(categories, row.category)}</select></td>
+        <td data-label="支払方法"><select onchange="updateRow(${index}, 'paymentMethod', this.value)">${makeOptions(paymentMethods, row.paymentMethod)}</select></td>
+        <td data-label="支払状況"><select onchange="updateRow(${index}, 'paymentStatus', this.value)">${makeOptions(paymentStatuses, row.paymentStatus)}</select></td>
+        <td data-label="支払者"><select onchange="updateRow(${index}, 'payer', this.value)">${makeOptions(participants, row.payer)}</select></td>
+        <td data-label="負担対象"><select onchange="updateRow(${index}, 'expenseType', this.value)">${makeOptions(expenseTypes, row.expenseType)}</select></td>
+        <td data-label="通貨"><select onchange="updateRow(${index}, 'currency', this.value); setDefaultRateForExpense(${index});">${makeCurrencyOptions(row.currency)}</select></td>
+        <td data-label="現地通貨額"><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" oninput="updateRow(${index}, 'amount', this.value)"></td>
+        <td data-label="円換算レート"><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} oninput="updateRow(${index}, 'exchangeRate', this.value)"></td>
+        <td data-label="日本円入力額"><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" oninput="updateRow(${index}, 'jpyAmount', this.value)"></td>
+        <td data-label="精算用日本円額" class="jpy-cell">${jpy === "" ? "" : formatYen(jpy)}</td>
+        <td data-label="精算状態"><select onchange="updateRow(${index}, 'settlementStatus', this.value)">${makeOptions(settlementStatuses, row.settlementStatus)}</select></td>
+        <td data-label="メモ"><input type="text" value="${escapeHTML(row.note)}" onchange="updateRow(${index}, 'note', this.value)"></td>
+        <td data-label="操作"><button class="small" onclick="confirmEdit('${row.id}')">確定</button><button class="small danger" onclick="deleteRow(${index})">削除</button></td>
+      `;
+    }
+
+    function startEdit(id) {
+      editingIds.add(id);
+      renderTable();
+    }
+
+    function confirmEdit(id) {
+      editingIds.delete(id);
+      const trip = getCurrentTrip();
+      sortExpensesByDate(trip);
+      saveApp();
+      renderTable();
+    }
+
+    function updateRow(index, key, value) {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      trip.expenses[index][key] = value;
+      if (key === "currency" && value === "JPY") trip.expenses[index].exchangeRate = 1;
+      trip.expenses[index] = normalizeExpenseRow(trip.expenses[index], trip.participants, trip);
+      saveApp();
+      renderTable();
+    }
+
+    function deleteRow(index) {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      const target = trip.expenses[index];
+      if (target) editingIds.delete(target.id);
+      trip.expenses.splice(index, 1);
+      saveApp();
+      renderTable();
+    }
+
+    function updateSummary() {
+      const trip = getCurrentTrip();
+      const summary = calculateSummary(trip);
+      renderSummaryTable(summary);
+      renderSettlementTable(summary);
+    }
+
+    function renderSummaryTable(summary) {
+      const table = document.getElementById("summaryTable");
+      if (summary.participants.length === 0) {
+        table.innerHTML = `<tbody><tr><td>参加者が未設定です。</td></tr></tbody>`;
+        return;
+      }
+
+      const header = `<thead><tr><th>項目</th>${summary.participants.map(name => `<th class="num">${escapeHTML(name)}</th>`).join("")}</tr></thead>`;
+      const rows = [
+        ["支払総額", "totalPaid"],
+        ["共通費支払額", "commonPaidAll"],
+        ["個人出費", "personalExpense"],
+        ["最終負担額", "actualExpense"]
+      ].map(([label, key]) => {
+        const strong = key === "actualExpense";
+        return `<tr class="${strong ? "warning" : ""}"><td>${strong ? `<strong>${label}</strong>` : label}</td>${summary.participants.map(name => `<td class="num">${strong ? `<strong>${formatYen(summary.result[name][key])}</strong>` : formatYen(summary.result[name][key])}</td>`).join("")}</tr>`;
+      }).join("");
+      table.innerHTML = `${header}<tbody>${rows}</tbody>`;
+    }
+
+    function renderSettlementTable(summary) {
+      document.getElementById("unsettledCommonTotal").textContent = formatYen(summary.unsettledCommonTotal);
+      document.getElementById("unsettledPerPerson").textContent = summary.participants.length <= 1 ? "—" : formatYen(summary.unsettledShare);
+      const list = document.getElementById("settlementList");
+
+      if (summary.participants.length <= 1) {
+        list.innerHTML = `<div class="settlement-result">参加者が1名のため精算不要</div>`;
+        return;
+      }
+
+      const settlements = calculateSettlements(summary);
+      if (settlements.length === 0) {
+        list.innerHTML = `<div class="settlement-result">精算額：0円</div>`;
+        return;
+      }
+      list.innerHTML = settlements.map(item => `<div class="settlement-result">${escapeHTML(item.from)} → ${escapeHTML(item.to)}：${formatYen(item.amount)}</div>`).join("");
+    }
+
+    function clearTripExpenses() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      if (!confirm("この旅行の支出をすべて削除します。よろしいですか？")) return;
+      trip.expenses = [];
+      editingIds.clear();
+      saveApp();
+      renderTable();
+    }
+
+    function exportCSV() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      const headers = ["旅行名", "行き先", "開始日", "終了日", "日付", "内容", "分類", "支払方法", "支払状況", "支払者", "負担対象", "通貨", "現地通貨額", "円換算レート", "日本円入力額", "精算用日本円額", "精算状態", "メモ"];
+      const rows = trip.expenses.map(row => [trip.title, trip.place, trip.startDate, trip.endDate, row.date, row.description, row.category, row.paymentMethod, row.paymentStatus, row.payer, row.expenseType, row.currency, row.amount, row.currency === "JPY" ? 1 : row.exchangeRate, row.jpyAmount, calculateJPY(row), row.settlementStatus, row.note]);
+      const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
+      const bom = "\uFEFF";
+      const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${trip.title || "travel"}_settlement.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function csvEscape(value) {
+      const str = String(value ?? "");
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) return `"${str.replaceAll('"', '""')}"`;
+      return str;
+    }
+
+    function runTests() {
+      console.assert(typeof handleNewTripTypeChange === "function", "TEST handleNewTripTypeChange exists");
+      console.assert(typeof handleEditTripTypeChange === "function", "TEST handleEditTripTypeChange exists");
+      console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150 }) === 15000, "TEST calculateJPY USD failed");
+      console.assert(calculateJPY({ amount: 3000, currency: "JPY", exchangeRate: 1 }) === 3000, "TEST calculateJPY JPY failed");
+      console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150, jpyAmount: 16000 }) === 16000, "TEST manual JPY amount should override converted amount");
+
+      const testTrip = {
+        participants: ["A", "B", "C"],
+        expenses: [
+          { amount: 9000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "未精算", payer: "A" },
+          { amount: 3000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "精算済", payer: "B" },
+          { amount: 1000, currency: "JPY", exchangeRate: 1, expenseType: "Cのみ", settlementStatus: "対象外", payer: "C" }
+        ]
+      };
+      const summary = calculateSummary(testTrip);
+      console.assert(summary.unsettledCommonTotal === 9000, "TEST unsettled common total failed");
+      console.assert(summary.unsettledShare === 3000, "TEST unsettled share for 3 people failed");
+      console.assert(summary.result.A.unsettledCommonDiff === 6000, "TEST A diff failed");
+      console.assert(summary.result.C.personalExpense === 1000, "TEST personal expense failed");
+      console.assert(summary.result.C.actualExpense === 5000, "TEST actual expense for C failed");
+      console.assert(calculateSettlements(summary).length === 2, "TEST 3-person settlement count failed");
+
+      const onePersonSummary = calculateSummary({ participants: ["A"], expenses: [{ amount: 1000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "未精算", payer: "A" }] });
+      console.assert(calculateSettlements(onePersonSummary).length === 0, "TEST one-person settlement should be unnecessary");
+    }
+
+    runTests();
+    loadApp();
+    initCurrencySelectors();
+    resetNewTripForm();
+    renderTripList();
+  </script>
+</body>
+</html>
