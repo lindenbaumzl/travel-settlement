@@ -237,7 +237,7 @@
       color: #fff;
       background: var(--accent);
       transition: 0.15s ease;
-      white-space: nowrap; /* 基本は折り返さない */
+      white-space: nowrap;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -2377,10 +2377,6 @@ ${settlementsText}
     }
 
     runTests();
-    loadApp();
-    
-    // （ここより上で window への関数バインディングを行っているため、
-    // ここで認証処理が始まります）
   </script>
 </body>
 </html>
