@@ -10,6 +10,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="application-name" content="旅行費用精算" />
   <title>旅行費用精算ツール</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
       --bg: #f5f7fb;
@@ -111,11 +112,10 @@
     .participant-list { display: grid; gap: 12px; margin-bottom: 16px; }
     
     .input-list {
-      display: grid; 
-      gap: 12px; 
+      display: flex; 
+      flex-direction: column;
+      gap: 16px; 
       margin-bottom: 16px;
-      overflow-x: auto;
-      padding-bottom: 4px;
     }
 
     .participant-item {
@@ -147,29 +147,33 @@
     #tripView[data-trip-type="international"] .domestic-only { display: none !important; }
 
     .input-row {
-      display: grid;
-      gap: 12px;
-      align-items: end;
-      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+      padding: 20px;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--soft);
     }
     
-    #tripView[data-trip-type="international"] .input-row {
-      /* 日付の列を150pxに広げてはみ出しを防ぐ */
-      grid-template-columns: 150px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
-      min-width: 1730px;
+    .input-row .field {
+      flex: 1 1 140px;
+      min-width: 0;
     }
-    #tripView[data-trip-type="domestic"] .input-row {
-      grid-template-columns: 150px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
-      min-width: 1180px;
+
+    .input-row .field.wide {
+      flex: 2 1 200px;
     }
-    
-    .input-row .field:last-child {
+
+    .input-row .field.currency-field {
+      flex: 1.5 1 180px;
+    }
+
+    .input-row .field.delete-btn {
+      flex: 0 0 40px;
       display: flex;
-      justify-content: center;
-      align-items: flex-end;
+      justify-content: flex-end;
     }
 
     .field {
@@ -290,11 +294,15 @@
     .trip-card .toolbar { margin-top: auto; padding-top: 16px; }
 
     .summary-table {
-      width: auto;
+      width: 100%;
       max-width: 100%;
       border-collapse: collapse;
       font-size: 14px;
       table-layout: auto;
+    }
+
+    #commonSummaryOverviewTable {
+      width: auto;
     }
 
     .summary-table th,
@@ -378,8 +386,8 @@
     }
 
     table.expense-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    #tripView[data-trip-type="international"] table.expense-table { min-width: 2000px; }
-    #tripView[data-trip-type="domestic"] table.expense-table { min-width: 1320px; }
+    #tripView[data-trip-type="international"] table.expense-table { min-width: 2060px; }
+    #tripView[data-trip-type="domestic"] table.expense-table { min-width: 1380px; }
 
     .expense-table th, .expense-table td { border: 1px solid var(--border); padding: 10px 8px; vertical-align: middle; }
     .expense-table th { position: sticky; top: 0; z-index: 2; background: var(--header); white-space: nowrap; text-align: center; }
@@ -420,28 +428,6 @@
       width: 100%;
       max-width: 500px;
       box-shadow: var(--shadow);
-    }
-    .ai-textarea {
-      width: 100%;
-      min-height: 120px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      font-family: inherit;
-      font-size: 14px;
-      resize: vertical;
-      margin-bottom: 8px;
-    }
-    .ai-textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .ai-assist-box {
-      background: linear-gradient(145deg, #f3f4f6, #eef2ff);
-      border: 1px solid #c7d2fe;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 24px;
     }
 
     /* 精算基準のラジオボタンエリアの専用レイアウト */
@@ -493,16 +479,8 @@
       }
       
       .input-row { 
-        grid-template-columns: 1fr !important; 
-        gap: 20px !important; 
-        padding: 20px !important; 
-        border-radius: 14px; 
-        align-items: flex-start !important; 
-        min-width: 0 !important; 
-      }
-      .input-row .field:last-child {
-        width: 100%;
-        justify-content: flex-end;
+        gap: 16px; 
+        padding: 16px; 
       }
       
       .participant-item { grid-template-columns: 1fr 46px; padding: 16px; border-radius: 14px; }
@@ -688,17 +666,6 @@
           <button class="small" onclick="showExpenseInputForm()">追加</button>
         </div>
         <div id="expenseInputArea" class="hidden">
-          <div class="ai-assist-box">
-            <h3 style="margin-top:0; font-size:14px; color:var(--accent-dark);">🤖 AIでカンタン入力</h3>
-            <textarea id="aiExpenseInput" class="ai-textarea" style="min-height: 60px; margin-bottom: 8px;" placeholder="例：昨日、Aさんがスタバでみんなのコーヒー代1500円をPayPayで払った" rows="2"></textarea>
-            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-              <button id="aiExpenseBtn" onclick="parseExpenseWithAI()" class="small wrap-text">✨ 文章から自動入力</button>
-              <button class="small secondary wrap-text" onclick="document.getElementById('aiReceiptInput').click()">📷 レシートから読取</button>
-              <input type="file" id="aiReceiptInput" accept="image/*" style="display:none;" onchange="parseReceiptWithAI(this)">
-              <span id="aiLoading" style="display:none; font-size:12px; color:var(--muted);">解析中...</span>
-            </div>
-            <p class="note" style="margin-top:8px; margin-bottom:0;">※自然な文章やレシート画像から内容を推測し、下の入力欄にセットします。</p>
-          </div>
           <div id="inputList" class="input-list"></div>
           <div class="toolbar">
             <button onclick="addInputRow()">＋ 入力欄を追加</button>
@@ -714,10 +681,14 @@
         <section class="card">
           <h2>集計</h2>
           <div class="summary-wrap"><table class="summary-table" id="summaryTable"></table></div>
-          <div style="margin-top: 16px;">
-            <button id="aiAnalysisBtn" onclick="generateTripAnalysis()" class="wrap-text" style="width: 100%; background: linear-gradient(135deg, #0ea5e9, #3b82f6);">✨ AI 支出アナリストに分析してもらう</button>
-          </div>
           <p class="note">各参加者の支払いの内訳（自分で負担する分の全額＋共通負担時の平均）と総額を集計します。</p>
+          
+          <!-- 支出割合グラフ表示機能 -->
+          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed var(--border);">
+            <h3 style="font-size: 14px; margin-bottom: 12px; color: var(--accent-dark);">📊 支出割合グラフ表示</h3>
+            <div id="chartControls" class="radio-row" style="margin-bottom: 16px;"></div>
+            <div id="chartContainer" style="display: flex; flex-wrap: wrap; gap: 24px; justify-content: center;"></div>
+          </div>
         </section>
 
         <section class="card">
@@ -755,10 +726,6 @@
           </div>
 
           <div id="settlementList" class="settlement-list" style="margin-bottom: 16px;"></div>
-          <div style="margin-top: auto;">
-            <button id="aiSettleBtn" onclick="generateSettlementMessage()" class="wrap-text" style="width:100%; background: linear-gradient(135deg, #6366f1, #a855f7);">✨ 精算メッセージを作成</button>
-            <p class="note">精算結果をLINE等で送りやすい文章にAIがまとめます。</p>
-          </div>
         </section>
       </div>
 
@@ -771,6 +738,7 @@
           <table class="expense-table">
             <thead>
               <tr>
+                <th style="width: 60px;">No.</th>
                 <th style="width: 140px;">日付</th>
                 <th style="width: 240px;">内容</th>
                 <th style="width: 120px;">分類</th>
@@ -860,7 +828,15 @@
     const settlementStatuses = ["未精算", "精算済", "対象外"];
     const majorCurrencyCodes = ["JPY", "USD", "EUR", "GBP", "CNY", "KRW", "TWD", "HKD", "SGD", "AUD", "CAD", "CHF", "THB", "MYR", "PHP", "IDR", "VND"];
     const exchangeRateCache = {};
-    const apiKey = ""; // Gemini API Key
+    
+    let chartInstances = {};
+    let selectedChartParticipants = new Set();
+    const categoryColors = {
+      "交通": "#4BC0C0", "宿泊": "#36A2EB", "食事": "#FF6384", "カフェ": "#FF9F40", 
+      "観光": "#FFCE56", "娯楽": "#9966FF", "買い物": "#F7464A", "ドラッグストア": "#FDB45C", 
+      "通信": "#3366CC", "手数料": "#8D9E8C", "チップ": "#949FB1", "荷物": "#C9CBFF", 
+      "洗濯": "#FFB6C1", "駐車場": "#E7E9ED", "その他": "#4D5360"
+    };
 
     const currencyList = [
       { country: "日本", code: "JPY", symbol: "¥" },
@@ -925,18 +901,13 @@
     window.confirmParticipantEdit = confirmParticipantEdit;
     window.cancelParticipantEdit = cancelParticipantEdit;
     window.showExpenseInputForm = showExpenseInputForm;
-    window.parseExpenseWithAI = parseExpenseWithAI;
-    window.parseReceiptWithAI = parseReceiptWithAI;
     window.addInputRow = addInputRow;
     window.registerInputRows = registerInputRows;
     window.resetInputRows = resetInputRows;
     window.hideExpenseInputForm = hideExpenseInputForm;
     window.clearTripExpenses = clearTripExpenses;
-    window.generateTripAnalysis = generateTripAnalysis;
     window.changeSettlementBase = changeSettlementBase;
-    window.generateSettlementMessage = generateSettlementMessage;
     window.closeModal = closeModal;
-    window.copyAiMessage = copyAiMessage;
     window.openTrip = openTrip;
     window.deleteTrip = deleteTrip;
     window.updateNewTripParticipant = updateNewTripParticipant;
@@ -951,6 +922,7 @@
     window.confirmEdit = confirmEdit;
     window.setDefaultRateForInput = setDefaultRateForInput;
     window.setDefaultRateForExpense = setDefaultRateForExpense;
+    window.toggleChartParticipant = toggleChartParticipant;
 
     // ====== Firebase Setup ======
     const myFirebaseConfig = {
@@ -1236,11 +1208,17 @@
         return row.amount === "" ? "" : Math.round(parseNumber(row.amount));
       }
 
-      if (base === "manual" && row.jpyAmount !== "" && row.jpyAmount !== null && row.jpyAmount !== undefined) {
+      const hasJpyAmount = row.jpyAmount !== "" && row.jpyAmount !== null && row.jpyAmount !== undefined;
+      const hasAmount = row.amount !== "" && row.amount !== null && row.amount !== undefined;
+
+      // 手入力金額優先で手入力がある場合、または、為替優先だが現地通貨額が未入力で手入力がある場合
+      if ((base === "manual" && hasJpyAmount) || (base === "rate" && !hasAmount && hasJpyAmount)) {
         return Math.round(parseNumber(row.jpyAmount));
       }
       
-      if (row.amount === "" || row.amount === null || row.amount === undefined) return "";
+      // 現地通貨額が未入力の場合は空を返す
+      if (!hasAmount) return "";
+
       const amount = parseNumber(row.amount);
       const rate = row.currency === "JPY" ? 1 : parseNumber(row.exchangeRate);
       return Math.round(amount * rate);
@@ -1773,23 +1751,23 @@
         div.className = "input-row";
         div.innerHTML = `
           <div class="field"><label>日付</label><input type="date" value="${escapeHTML(row.date)}" oninput="updateInputRow(${index}, 'date', this.value)"></div>
-          <div class="field"><label>内容</label><input type="text" value="${escapeHTML(row.description)}" placeholder="例：昼食" oninput="updateInputRow(${index}, 'description', this.value)"></div>
+          <div class="field wide"><label>内容</label><input type="text" value="${escapeHTML(row.description)}" placeholder="例：昼食" oninput="updateInputRow(${index}, 'description', this.value)"></div>
           <div class="field"><label>分類</label><select onchange="updateInputRow(${index}, 'category', this.value)">${makeOptions(categories, row.category)}</select></div>
           <div class="field"><label>支払方法</label><select onchange="updateInputRow(${index}, 'paymentMethod', this.value)">${makeOptions(paymentMethods, row.paymentMethod)}</select></div>
           <div class="field"><label>支払状況</label><select onchange="updateInputRow(${index}, 'paymentStatus', this.value)">${makeOptions(paymentStatuses, row.paymentStatus)}</select></div>
           <div class="field"><label>支払者</label><select onchange="updateInputRow(${index}, 'payer', this.value)">${makeOptions(participants, row.payer)}</select></div>
           <div class="field"><label>負担対象</label><select onchange="updateInputRow(${index}, 'expenseType', this.value)">${makeOptions(expenseTypes, row.expenseType)}</select></div>
           
-          <div class="field intl-only"><label>通貨</label><select onchange="updateInputRow(${index}, 'currency', this.value); setDefaultRateForInput(${index});">${makeCurrencyOptions(row.currency)}</select></div>
+          <div class="field intl-only currency-field"><label>通貨</label><select onchange="updateInputRow(${index}, 'currency', this.value); setDefaultRateForInput(${index});">${makeCurrencyOptions(row.currency)}</select></div>
           <div class="field intl-only"><label>現地通貨額</label><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
           <div class="field intl-only"><label>為替レート</label><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} oninput="updateInputRow(${index}, 'exchangeRate', this.value)"></div>
-          <div class="field intl-only"><label>手入力金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" oninput="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
+          <div class="field intl-only"><label>任意入力額(円)</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" oninput="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
           
           <div class="field domestic-only"><label>金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
           
           <div class="field"><label>精算状態</label><select onchange="updateInputRow(${index}, 'settlementStatus', this.value)">${makeOptions(settlementStatuses, row.settlementStatus)}</select></div>
-          <div class="field"><label>メモ</label><input type="text" value="${escapeHTML(row.note)}" placeholder="任意" oninput="updateInputRow(${index}, 'note', this.value)"></div>
-          <div class="field"><label>&nbsp;</label><button class="danger icon" onclick="removeInputRow(${index})" aria-label="削除">－</button></div>
+          <div class="field wide"><label>メモ</label><input type="text" value="${escapeHTML(row.note)}" placeholder="任意" oninput="updateInputRow(${index}, 'note', this.value)"></div>
+          <div class="field delete-btn"><label>&nbsp;</label><button class="danger icon" onclick="removeInputRow(${index})" aria-label="削除">－</button></div>
         `;
         inputList.appendChild(div);
       });
@@ -1871,6 +1849,7 @@
 
     function renderDisplayRow(row, index, jpy) {
       return `
+        <td data-label="No." style="text-align: center;">${index + 1}</td>
         <td data-label="日付">${escapeHTML(row.date)}</td>
         <td data-label="内容">${escapeHTML(row.description)}</td>
         <td data-label="分類">${escapeHTML(row.category)}</td>
@@ -1897,6 +1876,7 @@
       const participants = getParticipants();
       const expenseTypes = getExpenseTypes();
       return `
+        <td data-label="No." style="text-align: center;">${index + 1}</td>
         <td data-label="日付"><input type="date" value="${escapeHTML(row.date)}" onchange="updateRow(${index}, 'date', this.value)"></td>
         <td data-label="内容"><input type="text" value="${escapeHTML(row.description)}" onchange="updateRow(${index}, 'description', this.value)"></td>
         <td data-label="分類"><select onchange="updateRow(${index}, 'category', this.value)">${makeOptions(categories, row.category)}</select></td>
@@ -1963,6 +1943,8 @@
       const summary = calculateSummary(trip);
       renderSummaryTable(summary);
       renderSettlementTable(summary);
+      renderChartControls(summary);
+      renderCharts(summary);
     }
 
     function renderSummaryTable(summary) {
@@ -2053,6 +2035,145 @@
       list.innerHTML = settlements.map(item => `<div class="settlement-result">${escapeHTML(item.from)} → ${escapeHTML(item.to)}：${formatYen(item.amount)}</div>`).join("");
     }
 
+    function renderChartControls(summary) {
+      const container = document.getElementById("chartControls");
+      if (summary.participants.length === 0) {
+        container.innerHTML = `<span class="note">参加者がいません</span>`;
+        return;
+      }
+      
+      let html = '';
+      summary.participants.forEach(name => {
+        const isChecked = selectedChartParticipants.has(name) ? 'checked' : '';
+        html += `
+          <label class="radio-label" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
+            <input type="checkbox" value="${escapeHTML(name)}" ${isChecked} onchange="toggleChartParticipant(this)">
+            ${escapeHTML(name)}
+          </label>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function toggleChartParticipant(checkbox) {
+      const name = checkbox.value;
+      if (checkbox.checked) {
+        selectedChartParticipants.add(name);
+      } else {
+        selectedChartParticipants.delete(name);
+      }
+      const trip = getCurrentTrip();
+      if (trip) {
+         renderCharts(calculateSummary(trip));
+      }
+    }
+
+    function renderCharts(summary) {
+      const container = document.getElementById("chartContainer");
+      
+      // 不要になったグラフを破棄
+      Object.keys(chartInstances).forEach(name => {
+        if (!selectedChartParticipants.has(name) || !summary.participants.includes(name)) {
+          chartInstances[name].destroy();
+          delete chartInstances[name];
+        }
+      });
+      
+      // 参加者から削除された人の選択状態を解除
+      const validParticipants = new Set(summary.participants);
+      for (const name of selectedChartParticipants) {
+        if (!validParticipants.has(name)) {
+           selectedChartParticipants.delete(name);
+        }
+      }
+
+      container.innerHTML = '';
+
+      if (selectedChartParticipants.size === 0) {
+         container.innerHTML = '<div class="note">表示する対象者を選択してください。</div>';
+         return;
+      }
+
+      // 選択した順番ではなく、参加者リストの順番に合わせてグラフを表示する
+      summary.participants.filter(name => selectedChartParticipants.has(name)).forEach(name => {
+         const data = summary.result[name];
+         if (!data || data.actualExpense === 0) {
+            container.innerHTML += `<div style="width: 250px; text-align: center; margin: 10px;"><h4 style="margin:0 0 8px;">${escapeHTML(name)}</h4><p class="note">支出がありません</p></div>`;
+            return;
+         }
+
+         const wrapper = document.createElement("div");
+         wrapper.style.width = "250px";
+         wrapper.style.textAlign = "center";
+         
+         const title = document.createElement("h4");
+         title.style.margin = "0 0 12px 0";
+         title.textContent = name;
+         wrapper.appendChild(title);
+
+         const canvas = document.createElement("canvas");
+         canvas.id = `chart-${name}`;
+         wrapper.appendChild(canvas);
+         container.appendChild(wrapper);
+
+         const labels = [];
+         const values = [];
+         const bgColors = [];
+
+         categories.forEach(cat => {
+            const val = data.categoryExpense[cat];
+            if (val > 0) {
+               labels.push(cat);
+               values.push(Math.round(val));
+               bgColors.push(categoryColors[cat] || '#999999');
+            }
+         });
+
+         const ctx = canvas.getContext('2d');
+         chartInstances[name] = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+               labels: labels,
+               datasets: [{
+                  data: values,
+                  backgroundColor: bgColors,
+                  borderWidth: 1
+               }]
+            },
+            options: {
+               responsive: true,
+               maintainAspectRatio: true,
+               plugins: {
+                  legend: {
+                     position: 'bottom',
+                     labels: {
+                        boxWidth: 12,
+                        font: { size: 11 }
+                     }
+                  },
+                  tooltip: {
+                     callbacks: {
+                        label: function(context) {
+                           let label = context.label || '';
+                           if (label) {
+                              label += ': ';
+                           }
+                           if (context.parsed !== null) {
+                              let value = context.parsed;
+                              let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                              let percentage = total > 0 ? (value / total * 100).toFixed(1) : 0;
+                              label += new Intl.NumberFormat('ja-JP').format(value) + '円 (' + percentage + '%)';
+                           }
+                           return label;
+                        }
+                     }
+                  }
+               }
+            }
+         });
+      });
+    }
+
     async function clearTripExpenses() {
       const trip = getCurrentTrip();
       if (!trip) return;
@@ -2107,371 +2228,6 @@
       document.getElementById("customModal").classList.add("hidden");
     }
 
-    // Gemini API functions
-    async function callGeminiJson(prompt, schemaProperties) {
-      const model = "gemini-2.5-flash-preview-09-2025";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: schemaProperties
-          }
-        }
-      };
-      
-      let retries = 5;
-      const delays = [1000, 2000, 4000, 8000, 16000];
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-          const data = await response.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          return JSON.parse(text);
-        } catch (e) {
-          if (i === retries - 1) throw e;
-          await new Promise(r => setTimeout(r, delays[i]));
-        }
-      }
-    }
-
-    async function callGeminiImageJson(prompt, base64ImageData, mimeType, schemaProperties) {
-      const model = "gemini-2.5-flash-preview-09-2025";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: mimeType, data: base64ImageData } }
-          ]
-        }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: schemaProperties
-          }
-        }
-      };
-      
-      let retries = 5;
-      const delays = [1000, 2000, 4000, 8000, 16000];
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-          const data = await response.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          return JSON.parse(text);
-        } catch (e) {
-          if (i === retries - 1) throw e;
-          await new Promise(r => setTimeout(r, delays[i]));
-        }
-      }
-    }
-
-    async function callGeminiText(prompt) {
-      const model = "gemini-2.5-flash-preview-09-2025";
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [{ parts: [{ text: prompt }] }]
-      };
-      
-      let retries = 5;
-      const delays = [1000, 2000, 4000, 8000, 16000];
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          });
-          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
-          const data = await response.json();
-          return data.candidates?.[0]?.content?.parts?.[0]?.text;
-        } catch (e) {
-          if (i === retries - 1) throw e;
-          await new Promise(r => setTimeout(r, delays[i]));
-        }
-      }
-    }
-
-    async function parseExpenseWithAI() {
-      const inputEl = document.getElementById("aiExpenseInput");
-      const text = inputEl.value.trim();
-      if (!text) return showModal("エラー", "支出の内容を入力してください。");
-      
-      const btn = document.getElementById("aiExpenseBtn");
-      const loading = document.getElementById("aiLoading");
-      const trip = getCurrentTrip();
-      const isDomestic = trip && trip.tripType === "domestic";
-      
-      btn.disabled = true;
-      loading.style.display = "inline-block";
-      
-      const participants = getParticipants().join(", ");
-      const catList = categories.join(", ");
-      const payList = paymentMethods.join(", ");
-      
-      const prompt = `以下のテキストから旅行の支出情報を抽出してください。
-テキスト: "${text}"
-
-現在の旅行参加者: [${participants}]
-カテゴリの選択肢: [${catList}]
-支払方法の選択肢: [${payList}]
-
-抽出ルール:
-- payer（支払者）は参加者から推測してください。
-- amount（金額）は数値のみ。${isDomestic ? "日本国内の旅行なので、常に日本円の金額をセットしてください。" : ""}
-- date（日付）はYYYY-MM-DD形式。不明な場合は空文字にしてください。
-- categoryとpaymentMethodは選択肢から最も近いものを選んでください。`;
-
-      const schema = {
-         date: {type: "STRING"},
-         description: {type: "STRING"},
-         category: {type: "STRING"},
-         paymentMethod: {type: "STRING"},
-         payer: {type: "STRING"},
-         amount: {type: "NUMBER"},
-         note: {type: "STRING"}
-      };
-
-      try {
-        const result = await callGeminiJson(prompt, schema);
-        
-        if (inputRows.length === 0) {
-          inputRows.push(createEmptyExpenseRow());
-        }
-        const targetRow = inputRows[0];
-        
-        if (result.date) targetRow.date = result.date;
-        if (result.description) targetRow.description = result.description;
-        if (result.category && categories.includes(result.category)) targetRow.category = result.category;
-        if (result.paymentMethod && paymentMethods.includes(result.paymentMethod)) targetRow.paymentMethod = result.paymentMethod;
-        if (result.payer && getParticipants().includes(result.payer)) targetRow.payer = result.payer;
-        if (result.amount) targetRow.amount = result.amount;
-        if (result.note) targetRow.note = result.note;
-        
-        renderInputRows();
-        inputEl.value = ""; 
-        showModal("✨ 成功", "AIが内容を読み取り、入力フォームにセットしました！確認して「追加」を押してください。");
-      } catch(e) {
-        console.error(e);
-        showModal("エラー", "AIによる解析に失敗しました。時間をおいて再度お試しください。");
-      } finally {
-        btn.disabled = false;
-        loading.style.display = "none";
-      }
-    }
-
-    async function parseReceiptWithAI(input) {
-      if (!input.files || input.files.length === 0) return;
-      const file = input.files[0];
-
-      const btn = document.getElementById("aiExpenseBtn");
-      const loading = document.getElementById("aiLoading");
-      const trip = getCurrentTrip();
-      const isDomestic = trip && trip.tripType === "domestic";
-
-      btn.disabled = true;
-      loading.style.display = "inline-block";
-      loading.textContent = "画像処理中...";
-
-      try {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const dataUrl = e.target.result;
-          const base64ImageData = dataUrl.split(',')[1];
-          const mimeType = file.type;
-
-          loading.textContent = "レシート解析中...";
-
-          const participants = getParticipants().join(", ");
-          const catList = categories.join(", ");
-          const payList = paymentMethods.join(", ");
-
-          const prompt = `このレシート画像から旅行の支出情報を抽出してください。
-
-現在の旅行参加者: [${participants}]
-カテゴリの選択肢: [${catList}]
-支払方法の選択肢: [${payList}]
-
-抽出ルール:
-- payer（支払者）は参加者から推測できない場合は先頭の参加者か空文字にしてください。
-- amount（金額）は数値のみ。合計金額（Total）を抽出してください。${isDomestic ? "日本国内の旅行なので、常に日本円の金額をセットしてください。" : ""}
-- date（日付）はYYYY-MM-DD形式。不明な場合は空文字にしてください。
-- description（内容）は店名や主な購入品。
-- categoryとpaymentMethodは選択肢から最も近いものを選んでください。`;
-
-          const schema = {
-             date: {type: "STRING"},
-             description: {type: "STRING"},
-             category: {type: "STRING"},
-             paymentMethod: {type: "STRING"},
-             payer: {type: "STRING"},
-             amount: {type: "NUMBER"},
-             note: {type: "STRING"}
-          };
-
-          try {
-            const result = await callGeminiImageJson(prompt, base64ImageData, mimeType, schema);
-
-            if (inputRows.length === 0) {
-              inputRows.push(createEmptyExpenseRow());
-            }
-            const targetRow = inputRows[0];
-
-            if (result.date) targetRow.date = result.date;
-            if (result.description) targetRow.description = result.description;
-            if (result.category && categories.includes(result.category)) targetRow.category = result.category;
-            if (result.paymentMethod && paymentMethods.includes(result.paymentMethod)) targetRow.paymentMethod = result.paymentMethod;
-            if (result.payer && getParticipants().includes(result.payer)) targetRow.payer = result.payer;
-            if (result.amount) targetRow.amount = result.amount;
-            if (result.note) targetRow.note = result.note;
-
-            renderInputRows();
-            input.value = ""; 
-            showModal("✨ 成功", "AIがレシートを読み取り、入力フォームにセットしました！確認して「追加」を押してください。");
-          } catch (err) {
-            console.error(err);
-            showModal("エラー", "AIによるレシート解析に失敗しました。画像が不鮮明か、サーバーエラーの可能性があります。");
-          } finally {
-            btn.disabled = false;
-            loading.style.display = "none";
-            loading.textContent = "解析中...";
-          }
-        };
-        reader.readAsDataURL(file);
-      } catch(e) {
-        console.error(e);
-        showModal("エラー", "画像の読み込みに失敗しました。");
-        btn.disabled = false;
-        loading.style.display = "none";
-        loading.textContent = "解析中...";
-        input.value = "";
-      }
-    }
-
-    async function generateTripAnalysis() {
-      const trip = getCurrentTrip();
-      if (!trip || trip.expenses.length === 0) {
-        showModal("情報", "支出データがありません。いくつか支出を登録してからお試しください。");
-        return;
-      }
-
-      const btn = document.getElementById("aiAnalysisBtn");
-      const origText = btn.innerHTML;
-      btn.innerHTML = "✨ 分析中...";
-      btn.disabled = true;
-
-      const summary = calculateSummary(trip);
-      const expenseData = trip.expenses.map(e => `${e.date || "日付不明"} - ${e.description} (${e.category}): ${calculateJPY(e, trip)}円 [支払:${e.payer}, 負担:${e.expenseType}]`).join("\n");
-
-      const prompt = `以下の旅行の支出データを分析し、参加者向けの楽しくて役立つフィードバックを生成してください。
-HTML形式（h3, p, ul, li, strongタグ等を使用）で出力し、全体のルートとなるタグは不要です。Markdownのコードブロック（\`\`\`html）も含めないでください。
-
-旅行名: ${trip.title}
-総支出額: ${summary.totalCommonAll}円
-
-【支出明細】
-${expenseData}
-
-構成案:
-1. 🎯 支出の総評（何に一番お金を使っているか、全体的な傾向）
-2. 💡 面白ハイライト（例: 「Aさんのカフェ代が多いですね！」や「食費が全体のX%を占めています」など、データから分かるユニークな点）
-3. 💰 次回へのアドバイス（節約ポイントや、良かったお金の使い方）`;
-
-      try {
-        const resultHtml = await callGeminiText(prompt);
-        const cleanHtml = resultHtml.replace(/^\s*```(html)?\n?/i, '').replace(/\n?```\s*$/i, '');
-        showModal("✨ AI 支出アナリスト", `<div style="line-height:1.6;">${cleanHtml}</div>`);
-      } catch(e) {
-        console.error(e);
-        showModal("エラー", "AIによる分析に失敗しました。時間をおいて再度お試しください。");
-      } finally {
-        btn.innerHTML = origText;
-        btn.disabled = false;
-      }
-    }
-
-    async function generateSettlementMessage() {
-      const trip = getCurrentTrip();
-      if (!trip) return;
-      const summary = calculateSummary(trip);
-      const settlements = calculateSettlements(summary);
-      
-      if (settlements.length === 0) {
-        showModal("情報", "精算が必要な項目はありません。");
-        return;
-      }
-      
-      const btn = document.getElementById("aiSettleBtn");
-      const origText = btn.innerHTML;
-      btn.innerHTML = "✨ 生成中...";
-      btn.disabled = true;
-      
-      const settlementsText = settlements.map(s => `${s.from}さん から ${s.to}さんへ ${formatYen(s.amount)} 支払う`).join('\n');
-      
-      const prompt = `以下の旅行の精算情報をもとに、参加者にLINE等で送るためのフレンドリーなメッセージを作成してください。
-絵文字を使って、旅行が楽しかった雰囲気を出してください。
-
-旅行名: ${trip.title}
-場所: ${trip.place || "未設定"}
-期間: ${trip.startDate || "未設定"} ～ ${trip.endDate || "未設定"}
-
-【精算内容】
-${settlementsText}
-
-メッセージの構成:
-1. 簡単な挨拶と旅行の労い
-2. 誰から誰にいくら払うかのリスト
-3. 支払いの期日や方法（PayPay等）の案内（プレースホルダーとして）
-4. 締めの言葉`;
-
-      try {
-        const message = await callGeminiText(prompt);
-        
-        const html = `
-          <textarea id="aiMessageResult" class="ai-textarea" readonly style="height:250px;">${escapeHTML(message)}</textarea>
-          <div class="toolbar" style="margin-top:12px;">
-            <button onclick="copyAiMessage()">コピーする</button>
-          </div>
-          <p id="copyMsg" style="color:var(--accent); font-size:12px; display:none; margin-top:8px; font-weight:bold;">✨ クリップボードにコピーしました！</p>
-        `;
-        showModal("✨ 精算メッセージ", html);
-        
-      } catch(e) {
-        console.error(e);
-        showModal("エラー", "メッセージの生成に失敗しました。時間をおいて再度お試しください。");
-      } finally {
-        btn.innerHTML = origText;
-        btn.disabled = false;
-      }
-    }
-
-    function copyAiMessage() {
-      const ta = document.getElementById("aiMessageResult");
-      ta.select();
-      document.execCommand("copy");
-      document.getElementById("copyMsg").style.display = "block";
-      setTimeout(() => {
-        const msg = document.getElementById("copyMsg");
-        if(msg) msg.style.display = "none";
-      }, 3000);
-    }
-
     function runTests() {
       console.assert(typeof handleNewTripTypeChange === "function", "TEST handleNewTripTypeChange exists");
       console.assert(typeof handleEditTripTypeChange === "function", "TEST handleEditTripTypeChange exists");
@@ -2483,6 +2239,7 @@ ${settlementsText}
       console.assert(calculateJPY({ amount: 3000, currency: "JPY", exchangeRate: 1 }, dummyIntlManual) === 3000, "TEST calculateJPY JPY failed");
       console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150, jpyAmount: 16000 }, dummyIntlManual) === 16000, "TEST manual JPY amount should override converted amount");
       console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150, jpyAmount: 16000 }, dummyIntlRate) === 15000, "TEST rate base should ignore manual JPY amount");
+      console.assert(calculateJPY({ amount: "", currency: "USD", exchangeRate: 150, jpyAmount: 16000 }, dummyIntlRate) === 16000, "TEST rate base should fallback to manual JPY amount if amount is empty");
 
       const testTrip = {
         participants: ["A", "B", "C"],
