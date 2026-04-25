@@ -1,1 +1,6 @@
-export const initSync=()=>({enabled:false,status:'端末内保存'});
+export function initSync() {
+  return {
+    enabled: false,
+    status: '端末内保存'
+  };
+}
