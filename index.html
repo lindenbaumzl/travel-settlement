@@ -875,12 +875,19 @@
     let currentUser = null;
 
     async function initAuth() {
-      try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        try {
+          // プレビュー環境のトークンを使ってログインを試行
           await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
+          return;
+        } catch (error) {
+          console.warn("Custom token auth failed (likely custom config mismatch). Falling back to anonymous auth.", error);
         }
+      }
+      
+      try {
+        // フォールバック または Github Pages等での標準ログイン
+        await signInAnonymously(auth);
       } catch (error) {
         console.error("Auth error", error);
       }
@@ -919,6 +926,7 @@
         }
       }, (error) => {
         console.error("Firebase Snapshot Error:", error);
+        showModal("データベース エラー", "データの読み込みがブロックされました。<br><br>【原因】Firestoreのセキュリティルール（アクセス権）が設定されていません。<br><br>Firebaseコンソールの「Firestore Database」＞「ルール」タブで、認証済みユーザーが読み書きできるよう設定を更新してください。");
       });
     }
 
