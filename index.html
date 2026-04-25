@@ -113,9 +113,9 @@
     .participant-item {
       display: grid;
       grid-template-columns: 1fr 40px;
-      gap: 12px;
-      align-items: end;
-      padding: 14px;
+      gap: 16px;
+      align-items: flex-end;
+      padding: 16px;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--soft);
@@ -140,7 +140,7 @@
 
     .input-row {
       display: grid;
-      gap: 10px;
+      gap: 12px;
       align-items: end;
       padding: 16px;
       border: 1px solid var(--border);
@@ -154,11 +154,17 @@
     #tripView[data-trip-type="domestic"] .input-row {
       grid-template-columns: 130px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
     }
+    
+    .input-row .field:last-child {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
 
     .field label {
       display: block;
-      margin-bottom: 6px;
-      font-size: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
       color: var(--muted);
       font-weight: 700;
     }
@@ -181,6 +187,20 @@
 
     input[type="number"] { text-align: right; }
 
+    /* 期間（開始日・終了日）の横並び用スタイル */
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .date-range input {
+      flex: 1;
+    }
+    .date-range span {
+      color: var(--muted);
+      font-weight: bold;
+    }
+
     button {
       border: none;
       border-radius: 8px;
@@ -192,7 +212,8 @@
       color: #fff;
       background: var(--accent);
       transition: 0.15s ease;
-      white-space: nowrap;
+      white-space: normal; /* 折り返しを許可して枠の重なりを防止 */
+      line-height: 1.3;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -219,6 +240,8 @@
     }
 
     .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+    .toolbar.row-mobile { margin-bottom: 24px; margin-top: 0; gap: 8px; }
+    
     .trip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 
     .trip-card {
@@ -371,7 +394,7 @@
       border: 1px solid #c7d2fe;
       border-radius: 12px;
       padding: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
     }
 
     @media (max-width: 1200px) {
@@ -394,13 +417,28 @@
       button.icon { width: 46px; height: 46px; border-radius: 10px; }
       input, select { min-height: 46px; font-size: 16px; border-radius: 10px; padding: 10px 14px; }
       
-      .input-row { grid-template-columns: 1fr !important; gap: 12px; padding: 16px; border-radius: 14px; }
-      .participant-item { grid-template-columns: 1fr 46px; padding: 14px; border-radius: 14px; }
-      .toolbar { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      .input-row { 
+        grid-template-columns: 1fr !important; 
+        gap: 20px !important; 
+        padding: 20px !important; 
+        border-radius: 14px; 
+        align-items: flex-start !important; 
+      }
+      .input-row .field:last-child {
+        width: 100%;
+        justify-content: flex-end;
+      }
+      
+      .participant-item { grid-template-columns: 1fr 46px; padding: 16px; border-radius: 14px; }
+      
+      .toolbar { flex-direction: column; gap: 12px; }
       .toolbar button { width: 100%; }
-      .trip-card .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .toolbar.row-mobile { flex-direction: row; }
+      /* スマホ表示時に不要に広がらないように auto を設定 */
+      .toolbar.row-mobile button { width: auto; flex: 0 1 auto; } 
+      .trip-card .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
-      .radio-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .radio-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       .radio-label { min-height: 46px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; justify-content: center; }
       
       .trip-grid { grid-template-columns: 1fr; gap: 16px; }
@@ -457,8 +495,14 @@
         <div class="form-grid">
           <div class="field"><label>旅行名</label><input id="newTripTitle" type="text" placeholder="例：2026ロサンゼルス旅行"></div>
           <div class="field"><label>行き先</label><input id="newTripPlace" type="text" placeholder="例：ロサンゼルス"></div>
-          <div class="field"><label>開始日</label><input id="newTripStart" type="date"></div>
-          <div class="field"><label>終了日</label><input id="newTripEnd" type="date"></div>
+          <div class="field">
+            <label>期間</label>
+            <div class="date-range">
+              <input id="newTripStart" type="date">
+              <span>〜</span>
+              <input id="newTripEnd" type="date">
+            </div>
+          </div>
           <div class="field">
             <label>旅行区分</label>
             <div class="radio-row">
@@ -491,15 +535,16 @@
     </div>
 
     <div id="tripView" class="hidden">
-      <div class="app-header">
+      <div class="app-header" style="margin-bottom: 12px;">
         <div>
           <h1 id="tripHeading">旅行精算表</h1>
-          <p id="tripSubheading" class="subtitle"></p>
+          <p id="tripSubheading" class="subtitle" style="margin-bottom: 0;"></p>
         </div>
-        <div class="toolbar">
-          <button class="secondary" onclick="showMainView()">ホーム</button>
-          <button class="secondary" onclick="exportCSV()">CSV出力</button>
-        </div>
+      </div>
+      <div class="toolbar row-mobile">
+        <!-- 幅の余白(padding)を小さくしています -->
+        <button class="secondary" style="padding-left: 12px; padding-right: 12px;" onclick="showMainView()">ホーム</button>
+        <button class="secondary" style="padding-left: 12px; padding-right: 12px;" onclick="exportCSV()">CSV出力</button>
       </div>
 
       <section class="card">
@@ -512,8 +557,14 @@
           <div class="form-grid">
             <div class="field"><label>旅行名</label><input id="editTripTitle" type="text"></div>
             <div class="field"><label>行き先</label><input id="editTripPlace" type="text"></div>
-            <div class="field"><label>開始日</label><input id="editTripStart" type="date"></div>
-            <div class="field"><label>終了日</label><input id="editTripEnd" type="date"></div>
+            <div class="field">
+              <label>期間</label>
+              <div class="date-range">
+                <input id="editTripStart" type="date">
+                <span>〜</span>
+                <input id="editTripEnd" type="date">
+              </div>
+            </div>
             <div class="field">
               <label>旅行区分</label>
               <div class="radio-row">
@@ -560,17 +611,20 @@
       <section class="card">
         <div class="section-header">
           <h2>支出を入力</h2>
-          <button onclick="showExpenseInputForm()">支出を追加</button>
+          <!-- クラス small を追加して他の編集ボタンとサイズを揃え、テキストを「追加」にしました -->
+          <button class="small" onclick="showExpenseInputForm()">追加</button>
         </div>
         <div id="expenseInputArea" class="hidden">
           <div class="ai-assist-box">
             <h3 style="margin-top:0; font-size:14px; color:var(--accent-dark);">🤖 AIでカンタン入力</h3>
             <textarea id="aiExpenseInput" class="ai-textarea" style="min-height: 60px; margin-bottom: 8px;" placeholder="例：昨日、Aさんがスタバでみんなのコーヒー代1500円をPayPayで払った" rows="2"></textarea>
-            <div style="display:flex; align-items:center; gap:12px;">
-              <button id="aiExpenseBtn" onclick="parseExpenseWithAI()" class="small">✨ AIで自動入力</button>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <button id="aiExpenseBtn" onclick="parseExpenseWithAI()" class="small">✨ 文章から自動入力</button>
+              <button class="small secondary" onclick="document.getElementById('aiReceiptInput').click()">📷 レシートから読取</button>
+              <input type="file" id="aiReceiptInput" accept="image/*" style="display:none;" onchange="parseReceiptWithAI(this)">
               <span id="aiLoading" style="display:none; font-size:12px; color:var(--muted);">解析中...</span>
             </div>
-            <p class="note" style="margin-top:8px; margin-bottom:0;">※自然な文章から金額や支払者を推測し、下の入力欄にセットします。</p>
+            <p class="note" style="margin-top:8px; margin-bottom:0;">※自然な文章やレシート画像から内容を推測し、下の入力欄にセットします。</p>
           </div>
           <div id="inputList" class="input-list"></div>
           <div class="toolbar">
@@ -587,6 +641,9 @@
         <section class="card">
           <h2>総合集計</h2>
           <div class="summary-wrap"><table class="summary-table" id="summaryTable"></table></div>
+          <div style="margin-top: 16px;">
+            <button id="aiAnalysisBtn" onclick="generateTripAnalysis()" style="width: 100%; background: linear-gradient(135deg, #0ea5e9, #3b82f6);">✨ AI 支出アナリストに分析してもらう</button>
+          </div>
           <p class="note">参加者全員の支払額、共通費、個人出費、最終負担額を集計します。</p>
         </section>
 
@@ -1780,6 +1837,46 @@
       }
     }
 
+    async function callGeminiImageJson(prompt, base64ImageData, mimeType, schemaProperties) {
+      const model = "gemini-2.5-flash-preview-09-2025";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: mimeType, data: base64ImageData } }
+          ]
+        }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: schemaProperties
+          }
+        }
+      };
+      
+      let retries = 5;
+      const delays = [1000, 2000, 4000, 8000, 16000];
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+          const data = await response.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          return JSON.parse(text);
+        } catch (e) {
+          if (i === retries - 1) throw e;
+          await new Promise(r => setTimeout(r, delays[i]));
+        }
+      }
+    }
+
     async function callGeminiText(prompt) {
       const model = "gemini-2.5-flash-preview-09-2025";
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -1871,6 +1968,136 @@
       } finally {
         btn.disabled = false;
         loading.style.display = "none";
+      }
+    }
+
+    async function parseReceiptWithAI(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+
+      const btn = document.getElementById("aiExpenseBtn");
+      const loading = document.getElementById("aiLoading");
+      const trip = getCurrentTrip();
+      const isDomestic = trip && trip.tripType === "domestic";
+
+      btn.disabled = true;
+      loading.style.display = "inline-block";
+      loading.textContent = "画像処理中...";
+
+      try {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const dataUrl = e.target.result;
+          const base64ImageData = dataUrl.split(',')[1];
+          const mimeType = file.type;
+
+          loading.textContent = "レシート解析中...";
+
+          const participants = getParticipants().join(", ");
+          const catList = categories.join(", ");
+          const payList = paymentMethods.join(", ");
+
+          const prompt = `このレシート画像から旅行の支出情報を抽出してください。
+
+現在の旅行参加者: [${participants}]
+カテゴリの選択肢: [${catList}]
+支払方法の選択肢: [${payList}]
+
+抽出ルール:
+- payer（支払者）は参加者から推測できない場合は先頭の参加者か空文字にしてください。
+- amount（金額）は数値のみ。合計金額（Total）を抽出してください。${isDomestic ? "日本国内の旅行なので、常に日本円の金額をセットしてください。" : ""}
+- date（日付）はYYYY-MM-DD形式。不明な場合は空文字にしてください。
+- description（内容）は店名や主な購入品。
+- categoryとpaymentMethodは選択肢から最も近いものを選んでください。`;
+
+          const schema = {
+             date: {type: "STRING"},
+             description: {type: "STRING"},
+             category: {type: "STRING"},
+             paymentMethod: {type: "STRING"},
+             payer: {type: "STRING"},
+             amount: {type: "NUMBER"},
+             note: {type: "STRING"}
+          };
+
+          try {
+            const result = await callGeminiImageJson(prompt, base64ImageData, mimeType, schema);
+
+            if (inputRows.length === 0) {
+              inputRows.push(createEmptyExpenseRow());
+            }
+            const targetRow = inputRows[0];
+
+            if (result.date) targetRow.date = result.date;
+            if (result.description) targetRow.description = result.description;
+            if (result.category && categories.includes(result.category)) targetRow.category = result.category;
+            if (result.paymentMethod && paymentMethods.includes(result.paymentMethod)) targetRow.paymentMethod = result.paymentMethod;
+            if (result.payer && getParticipants().includes(result.payer)) targetRow.payer = result.payer;
+            if (result.amount) targetRow.amount = result.amount;
+            if (result.note) targetRow.note = result.note;
+
+            renderInputRows();
+            input.value = ""; 
+            showModal("✨ 成功", "AIがレシートを読み取り、入力フォームにセットしました！確認して「追加」を押してください。");
+          } catch (err) {
+            console.error(err);
+            showModal("エラー", "AIによるレシート解析に失敗しました。画像が不鮮明か、サーバーエラーの可能性があります。");
+          } finally {
+            btn.disabled = false;
+            loading.style.display = "none";
+            loading.textContent = "解析中...";
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch(e) {
+        console.error(e);
+        showModal("エラー", "画像の読み込みに失敗しました。");
+        btn.disabled = false;
+        loading.style.display = "none";
+        loading.textContent = "解析中...";
+        input.value = "";
+      }
+    }
+
+    async function generateTripAnalysis() {
+      const trip = getCurrentTrip();
+      if (!trip || trip.expenses.length === 0) {
+        showModal("情報", "支出データがありません。いくつか支出を登録してからお試しください。");
+        return;
+      }
+
+      const btn = document.getElementById("aiAnalysisBtn");
+      const origText = btn.innerHTML;
+      btn.innerHTML = "✨ 分析中...";
+      btn.disabled = true;
+
+      const summary = calculateSummary(trip);
+      const expenseData = trip.expenses.map(e => `${e.date || "日付不明"} - ${e.description} (${e.category}): ${calculateJPY(e, trip)}円 [支払:${e.payer}, 負担:${e.expenseType}]`).join("\n");
+
+      const prompt = `以下の旅行の支出データを分析し、参加者向けの楽しくて役立つフィードバックを生成してください。
+HTML形式（h3, p, ul, li, strongタグ等を使用）で出力し、全体のルートとなるタグは不要です。Markdownのコードブロック（\`\`\`html）も含めないでください。
+
+旅行名: ${trip.title}
+総支出額: ${summary.totalCommonAll}円
+
+【支出明細】
+${expenseData}
+
+構成案:
+1. 🎯 支出の総評（何に一番お金を使っているか、全体的な傾向）
+2. 💡 面白ハイライト（例: 「Aさんのカフェ代が多いですね！」や「食費が全体のX%を占めています」など、データから分かるユニークな点）
+3. 💰 次回へのアドバイス（節約ポイントや、良かったお金の使い方）`;
+
+      try {
+        const resultHtml = await callGeminiText(prompt);
+        const cleanHtml = resultHtml.replace(/^\s*```(html)?\n?/i, '').replace(/\n?```\s*$/i, '');
+        showModal("✨ AI 支出アナリスト", `<div style="line-height:1.6;">${cleanHtml}</div>`);
+      } catch(e) {
+        console.error(e);
+        showModal("エラー", "AIによる分析に失敗しました。時間をおいて再度お試しください。");
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
       }
     }
 
