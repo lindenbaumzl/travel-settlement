@@ -157,6 +157,7 @@
     }
     
     #tripView[data-trip-type="international"] .input-row {
+      /* 日付の列を150pxに広げてはみ出しを防ぐ */
       grid-template-columns: 150px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
       min-width: 1730px;
     }
@@ -237,7 +238,7 @@
       color: #fff;
       background: var(--accent);
       transition: 0.15s ease;
-      white-space: nowrap;
+      white-space: nowrap; /* 基本は折り返さない */
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -306,8 +307,12 @@
 
     .summary-table th {
       background: var(--header);
-      text-align: left;
+      text-align: center; /* ヘッダーの文字を中央揃えに */
       font-weight: 700;
+    }
+
+    .summary-table tbody th {
+      text-align: left; /* tbody内の行ヘッダは左揃えに */
     }
 
     .summary-table th:first-child,
@@ -315,25 +320,37 @@
       min-width: 120px;
     }
 
-    .summary-table td.num,
-    .summary-table th.num {
+    .summary-table td.num {
       text-align: right;
       min-width: 92px;
     }
 
-    .settlement-list { display: grid; gap: 10px; margin-top: 16px; }
-    .settlement-result {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
+    .summary-table th.num {
+      text-align: center;
+      min-width: 92px;
+    }
+
+    .settlement-list { 
+      display: flex; 
+      flex-direction: column;
+      gap: 10px; 
+      margin-top: 16px; 
       width: fit-content;
       max-width: 100%;
+    }
+    .settlement-result {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      width: 100%;
       padding: 12px 18px;
       border-radius: 10px;
       background: var(--success-bg);
       font-size: 15px;
       font-weight: 800;
-      text-align: center;
+      text-align: left;
+      box-sizing: border-box;
+      word-break: break-word;
     }
 
     .summary-grid .card {
@@ -425,6 +442,29 @@
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 24px;
+    }
+
+    /* 精算基準のラジオボタンエリアの専用レイアウト */
+    #settlementBaseArea .radio-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      align-items: stretch;
+      gap: 12px;
+      min-height: auto;
+    }
+    #settlementBaseArea .radio-label {
+      display: flex;
+      align-items: flex-start !important;
+      justify-content: flex-start !important;
+      height: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #fff;
+    }
+    #settlementBaseArea .radio-label input {
+      margin-top: 2px; /* 複数行テキストの1行目に高さを合わせる */
     }
 
     @media (max-width: 1200px) {
@@ -672,37 +712,48 @@
 
       <div class="summary-grid">
         <section class="card">
-          <h2>総合集計</h2>
+          <h2>集計</h2>
           <div class="summary-wrap"><table class="summary-table" id="summaryTable"></table></div>
           <div style="margin-top: 16px;">
             <button id="aiAnalysisBtn" onclick="generateTripAnalysis()" class="wrap-text" style="width: 100%; background: linear-gradient(135deg, #0ea5e9, #3b82f6);">✨ AI 支出アナリストに分析してもらう</button>
           </div>
-          <p class="note">参加者全員の支払額、共通費、個人出費、最終負担額を集計します。</p>
+          <p class="note">各参加者の支払いの内訳（自分で負担する分の全額＋共通負担時の平均）と総額を集計します。</p>
         </section>
 
         <section class="card">
-          <h2>共通精算表</h2>
+          <h2>精算表</h2>
+          <p class="note" style="margin-top: -8px; margin-bottom: 16px;">※この精算表は、負担対象が「共通」となっている費用のみを対象として計算しています。</p>
+          
           <div id="settlementBaseArea" class="intl-only" style="margin-bottom: 16px; padding: 14px; background: var(--soft); border-radius: 12px; border: 1px solid var(--border);">
             <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">精算に使用する金額の基準：</div>
             <div class="radio-row" style="min-height: auto; gap: 20px;">
               <label class="radio-label">
-                <input type="radio" name="settlementBase" value="manual" onchange="changeSettlementBase(this.value)"> 
-                手入力した金額優先（クレカ明細等）※未入力時は自動換算
+                <input type="radio" name="settlementBase" value="rate" onchange="changeSettlementBase(this.value)"> 
+                <span>為替レート換算が優先</span>
               </label>
               <label class="radio-label">
-                <input type="radio" name="settlementBase" value="rate" onchange="changeSettlementBase(this.value)"> 
-                為替レートで自動換算した金額
+                <input type="radio" name="settlementBase" value="manual" onchange="changeSettlementBase(this.value)"> 
+                <span>手入力金額が優先<br><small style="font-weight:normal; color:var(--muted);">※未入力時は自動換算</small></span>
               </label>
             </div>
             <p class="note" style="margin-top: 8px; margin-bottom: 0;">※「為替概算額」と「実際の引き落とし額」のどちらで割り勘するかを選べます。</p>
           </div>
 
-          <table class="summary-table">
-            <tbody>
-              <tr><th>未精算の共通費合計</th><td class="num" id="unsettledCommonTotal">0円</td></tr>
-              <tr><th>1人あたり負担額</th><td class="num" id="unsettledPerPerson">0円</td></tr>
-            </tbody>
-          </table>
+          <h3>共通費用の概要</h3>
+          <div class="summary-wrap" style="margin-bottom: 20px;">
+            <table class="summary-table" id="commonSummaryOverviewTable">
+              <tbody id="commonSummaryOverviewBody"></tbody>
+            </table>
+          </div>
+
+          <h3>個人別精算表 (未精算分)</h3>
+          <div class="summary-wrap" style="margin-bottom: 20px;">
+            <table class="summary-table" id="commonSummaryPersonalTable">
+              <thead id="commonSummaryPersonalHead"></thead>
+              <tbody id="commonSummaryPersonalBody"></tbody>
+            </table>
+          </div>
+
           <div id="settlementList" class="settlement-list" style="margin-bottom: 16px;"></div>
           <div style="margin-top: auto;">
             <button id="aiSettleBtn" onclick="generateSettlementMessage()" class="wrap-text" style="width:100%; background: linear-gradient(135deg, #6366f1, #a855f7);">✨ 精算メッセージを作成</button>
@@ -857,7 +908,6 @@
     let editingParticipants = [];
 
     // ====== グローバルスコープへの関数バインディング ======
-    // ※認証エラー等で処理が停止しても、HTMLのonclickから正しく関数が呼ばれるようにここで事前に紐付けます。
     window.showNewTripForm = showNewTripForm;
     window.handleNewTripTypeChange = handleNewTripTypeChange;
     window.addNewTripParticipant = addNewTripParticipant;
@@ -927,7 +977,6 @@
     async function initAuth() {
       if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
         try {
-          // プレビュー環境のトークンを使ってログインを試行
           await signInWithCustomToken(auth, __initial_auth_token);
           return;
         } catch (error) {
@@ -936,7 +985,6 @@
       }
       
       try {
-        // フォールバック または Github Pages等での標準ログイン
         await signInAnonymously(auth);
       } catch (error) {
         console.error("Auth error", error);
@@ -1246,6 +1294,7 @@
     function calculateSummary(trip = getCurrentTrip()) {
       const participants = trip ? (trip.participants || []) : [];
       const result = {};
+      
       participants.forEach(name => {
         result[name] = {
           totalPaid: 0,
@@ -1253,41 +1302,62 @@
           personalExpense: 0,
           actualExpense: 0,
           unsettledCommonPaid: 0,
-          unsettledCommonDiff: 0
+          unsettledCommonDiff: 0,
+          categoryExpense: {} 
         };
+        categories.forEach(cat => result[name].categoryExpense[cat] = 0);
       });
 
       let totalCommonAll = 0;
       let unsettledCommonTotal = 0;
+      let settledCommonTotal = 0;
 
-      if (!trip) return { participants, result, totalCommonAll, actualCommonShare: 0, unsettledCommonTotal, unsettledShare: 0 };
+      if (!trip) return { participants, result, totalCommonAll, actualCommonShare: 0, unsettledCommonTotal, settledCommonTotal, unsettledShare: 0 };
 
       trip.expenses.forEach(row => {
         const jpy = calculateJPY(row, trip);
         if (jpy === "") return;
+        
         if (result[row.payer]) result[row.payer].totalPaid += jpy;
 
         if (row.expenseType === "共通") {
           totalCommonAll += jpy;
           if (result[row.payer]) result[row.payer].commonPaidAll += jpy;
+          
           if (row.settlementStatus === "未精算") {
             unsettledCommonTotal += jpy;
             if (result[row.payer]) result[row.payer].unsettledCommonPaid += jpy;
+          } else if (row.settlementStatus === "精算済") {
+            settledCommonTotal += jpy;
           }
+          
+          const share = participants.length > 0 ? jpy / participants.length : 0;
+          participants.forEach(name => {
+            if (result[name] && result[name].categoryExpense[row.category] !== undefined) {
+               result[name].categoryExpense[row.category] += share;
+            }
+          });
+
         } else {
           const owner = row.expenseType.replace(/のみ$/, "");
-          if (result[owner]) result[owner].personalExpense += jpy;
+          if (result[owner]) {
+            result[owner].personalExpense += jpy;
+            if (result[owner].categoryExpense[row.category] !== undefined) {
+              result[owner].categoryExpense[row.category] += jpy;
+            }
+          }
         }
       });
 
       const actualCommonShare = participants.length > 0 ? totalCommonAll / participants.length : 0;
       const unsettledShare = participants.length > 0 ? unsettledCommonTotal / participants.length : 0;
+      
       participants.forEach(name => {
         result[name].actualExpense = result[name].personalExpense + actualCommonShare;
         result[name].unsettledCommonDiff = result[name].unsettledCommonPaid - unsettledShare;
       });
 
-      return { participants, result, totalCommonAll, actualCommonShare, unsettledCommonTotal, unsettledShare };
+      return { participants, result, totalCommonAll, actualCommonShare, unsettledCommonTotal, settledCommonTotal, unsettledShare };
     }
 
     function calculateSettlements(summary) {
@@ -1857,19 +1927,23 @@
     async function confirmEdit(id) {
       editingIds.delete(id);
       const trip = getCurrentTrip();
-      if (!trip) return;
+      if (!trip) {
+        renderTable();
+        return;
+      }
       trip.expenses = trip.expenses.map(row => normalizeExpenseRow(row, trip.participants, trip));
       sortExpensesByDate(trip);
-      await saveTripDB(trip);
+      renderTable(); 
+      await saveTripDB(trip); 
     }
 
     function updateRow(index, key, value) {
       const trip = getCurrentTrip();
       if (!trip) return;
       trip.expenses[index][key] = value;
-      // 確定ボタンが押されるまでDB保存（再描画）は行わず、フォーカス外れを防ぎます
       if (key === "currency" && value === "JPY") {
         trip.expenses[index].exchangeRate = 1;
+        renderTable(); 
       }
     }
 
@@ -1879,11 +1953,13 @@
       const target = trip.expenses[index];
       if (target) editingIds.delete(target.id);
       trip.expenses.splice(index, 1);
+      renderTable(); 
       await saveTripDB(trip);
     }
 
     function updateSummary() {
       const trip = getCurrentTrip();
+      if (!trip) return;
       const summary = calculateSummary(trip);
       renderSummaryTable(summary);
       renderSettlementTable(summary);
@@ -1896,22 +1972,72 @@
         return;
       }
 
-      const header = `<thead><tr><th>項目</th>${summary.participants.map(name => `<th class="num">${escapeHTML(name)}</th>`).join("")}</tr></thead>`;
-      const rows = [
-        ["支払総額", "totalPaid"],
-        ["共通費支払額", "commonPaidAll"],
-        ["個人出費", "personalExpense"],
-        ["最終負担額", "actualExpense"]
-      ].map(([label, key]) => {
-        const strong = key === "actualExpense";
-        return `<tr class="${strong ? "warning" : ""}"><td>${strong ? `<strong>${label}</strong>` : label}</td>${summary.participants.map(name => `<td class="num">${strong ? `<strong>${formatYen(summary.result[name][key])}</strong>` : formatYen(summary.result[name][key])}</td>`).join("")}</tr>`;
-      }).join("");
-      table.innerHTML = `${header}<tbody>${rows}</tbody>`;
+      const header = `<thead><tr><th>分類</th>${summary.participants.map(name => `<th class="num">${escapeHTML(name)}</th>`).join("")}</tr></thead>`;
+      
+      const rows = [];
+      categories.forEach(cat => {
+         rows.push(`<tr><td>${escapeHTML(cat)}</td>${summary.participants.map(name => `<td class="num">${formatYen(summary.result[name].categoryExpense[cat])}</td>`).join("")}</tr>`);
+      });
+      
+      rows.push(`<tr class="warning"><td><strong>総額</strong></td>${summary.participants.map(name => `<td class="num"><strong>${formatYen(summary.result[name].actualExpense)}</strong></td>`).join("")}</tr>`);
+
+      table.innerHTML = `${header}<tbody>${rows.join("")}</tbody>`;
     }
 
     function renderSettlementTable(summary) {
-      document.getElementById("unsettledCommonTotal").textContent = formatYen(summary.unsettledCommonTotal);
-      document.getElementById("unsettledPerPerson").textContent = summary.participants.length <= 1 ? "—" : formatYen(summary.unsettledShare);
+      const overviewBody = document.getElementById("commonSummaryOverviewBody");
+      if (overviewBody) {
+        overviewBody.innerHTML = `
+          <tr><th>共通費の総額</th><td class="num">${formatYen(summary.totalCommonAll)}</td></tr>
+          <tr><th>精算済みの費用</th><td class="num">${formatYen(summary.settledCommonTotal)}</td></tr>
+          <tr><th>未精算の費用</th><td class="num">${formatYen(summary.unsettledCommonTotal)}</td></tr>
+        `;
+      }
+
+      const personalHead = document.getElementById("commonSummaryPersonalHead");
+      const personalBody = document.getElementById("commonSummaryPersonalBody");
+      
+      if (personalHead && personalBody) {
+        personalHead.innerHTML = `
+          <tr>
+            <th>参加者</th>
+            <th class="num">支払った総額</th>
+            <th class="num">負担額</th>
+            <th class="num">差額</th>
+            <th style="text-align:center;">状態</th>
+          </tr>
+        `;
+        
+        let personalRowsHtml = '';
+        summary.participants.forEach(name => {
+            const data = summary.result[name];
+            const diff = data.unsettledCommonDiff;
+            let diffStr = '';
+            let statusStr = '';
+            if (diff > 0) {
+                diffStr = '+' + formatYen(diff);
+                statusStr = '<span style="color: var(--accent-dark); font-weight: bold;">受取</span>';
+            } else if (diff < 0) {
+                diffStr = '<span style="color: var(--danger);">' + '-' + formatYen(Math.abs(diff)) + '</span>';
+                statusStr = '<span style="color: var(--danger); font-weight: bold;">支払</span>';
+            } else {
+                diffStr = '±0円';
+                statusStr = '<span style="color: var(--muted);">精算なし</span>';
+            }
+
+            personalRowsHtml += `
+              <tr>
+                <td>${escapeHTML(name)}</td>
+                <td class="num">${formatYen(data.unsettledCommonPaid)}</td>
+                <td class="num">${formatYen(summary.unsettledShare)}</td>
+                <td class="num">${diffStr}</td>
+                <td style="text-align:center;">${statusStr}</td>
+              </tr>
+            `;
+        });
+        personalBody.innerHTML = personalRowsHtml;
+      }
+
       const list = document.getElementById("settlementList");
 
       if (summary.participants.length <= 1) {
@@ -2362,9 +2488,9 @@ ${settlementsText}
         participants: ["A", "B", "C"],
         tripType: "domestic",
         expenses: [
-          { amount: 9000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "未精算", payer: "A" },
-          { amount: 3000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "精算済", payer: "B" },
-          { amount: 1000, currency: "JPY", exchangeRate: 1, expenseType: "Cのみ", settlementStatus: "対象外", payer: "C" }
+          { amount: 9000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "未精算", payer: "A", category: "食事" },
+          { amount: 3000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "精算済", payer: "B", category: "交通" },
+          { amount: 1000, currency: "JPY", exchangeRate: 1, expenseType: "Cのみ", settlementStatus: "対象外", payer: "C", category: "娯楽" }
         ]
       };
       const summary = calculateSummary(testTrip);
@@ -2373,6 +2499,7 @@ ${settlementsText}
       console.assert(summary.result.A.unsettledCommonDiff === 6000, "TEST A diff failed");
       console.assert(summary.result.C.personalExpense === 1000, "TEST personal expense failed");
       console.assert(summary.result.C.actualExpense === 5000, "TEST actual expense for C failed");
+      console.assert(summary.result.C.categoryExpense["娯楽"] === 1000, "TEST category mapping failed");
       console.assert(calculateSettlements(summary).length === 2, "TEST 3-person settlement count failed");
     }
 
