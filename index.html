@@ -108,7 +108,15 @@
 
     .radio-label input { width: auto; min-height: auto; cursor: pointer; }
 
-    .participant-list, .input-list { display: grid; gap: 12px; margin-bottom: 16px; }
+    .participant-list { display: grid; gap: 12px; margin-bottom: 16px; }
+    
+    .input-list {
+      display: grid; 
+      gap: 12px; 
+      margin-bottom: 16px;
+      overflow-x: auto; /* 画面が狭いときに圧縮されず横スクロールできるようにする */
+      padding-bottom: 4px;
+    }
 
     .participant-item {
       display: grid;
@@ -149,10 +157,14 @@
     }
     
     #tripView[data-trip-type="international"] .input-row {
-      grid-template-columns: 130px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
+      /* 日付の列を130pxから140pxに広げてはみ出しにくくし、全体の最低幅を確保 */
+      grid-template-columns: 140px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
+      min-width: 1700px;
     }
     #tripView[data-trip-type="domestic"] .input-row {
-      grid-template-columns: 130px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
+      /* 国内旅行用レイアウトの最低幅確保 */
+      grid-template-columns: 140px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
+      min-width: 1150px;
     }
     
     .input-row .field:last-child {
@@ -171,6 +183,7 @@
 
     input, select {
       width: 100%;
+      max-width: 100%;
       min-height: 40px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -212,7 +225,7 @@
       color: #fff;
       background: var(--accent);
       transition: 0.15s ease;
-      white-space: normal; /* 折り返しを許可して枠の重なりを防止 */
+      white-space: normal;
       line-height: 1.3;
       display: inline-flex;
       align-items: center;
@@ -398,7 +411,7 @@
     }
 
     @media (max-width: 1200px) {
-      .input-row { grid-template-columns: repeat(4, minmax(150px, 1fr)) !important; }
+      .input-row { grid-template-columns: repeat(4, minmax(150px, 1fr)) !important; min-width: 0 !important; }
       .form-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
     }
 
@@ -423,6 +436,7 @@
         padding: 20px !important; 
         border-radius: 14px; 
         align-items: flex-start !important; 
+        min-width: 0 !important; /* スマホ時は横幅固定を解除 */
       }
       .input-row .field:last-child {
         width: 100%;
@@ -434,7 +448,6 @@
       .toolbar { flex-direction: column; gap: 12px; }
       .toolbar button { width: 100%; }
       .toolbar.row-mobile { flex-direction: row; }
-      /* スマホ表示時に不要に広がらないように auto を設定 */
       .toolbar.row-mobile button { width: auto; flex: 0 1 auto; } 
       .trip-card .toolbar { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
@@ -542,7 +555,6 @@
         </div>
       </div>
       <div class="toolbar row-mobile">
-        <!-- 幅の余白(padding)を小さくしています -->
         <button class="secondary" style="padding-left: 12px; padding-right: 12px;" onclick="showMainView()">ホーム</button>
         <button class="secondary" style="padding-left: 12px; padding-right: 12px;" onclick="exportCSV()">CSV出力</button>
       </div>
@@ -611,7 +623,6 @@
       <section class="card">
         <div class="section-header">
           <h2>支出を入力</h2>
-          <!-- クラス small を追加して他の編集ボタンとサイズを揃え、テキストを「追加」にしました -->
           <button class="small" onclick="showExpenseInputForm()">追加</button>
         </div>
         <div id="expenseInputArea" class="hidden">
@@ -1537,11 +1548,11 @@
           <div class="field"><label>負担対象</label><select onchange="updateInputRow(${index}, 'expenseType', this.value)">${makeOptions(expenseTypes, row.expenseType)}</select></div>
           
           <div class="field intl-only"><label>通貨</label><select onchange="updateInputRow(${index}, 'currency', this.value); setDefaultRateForInput(${index});">${makeCurrencyOptions(row.currency)}</select></div>
-          <div class="field intl-only"><label>現地通貨額</label><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
-          <div class="field intl-only"><label>為替レート</label><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} oninput="updateInputRow(${index}, 'exchangeRate', this.value)"></div>
-          <div class="field intl-only"><label>手入力金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" oninput="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
+          <div class="field intl-only"><label>現地通貨額</label><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" placeholder="0" onchange="updateInputRow(${index}, 'amount', this.value)"></div>
+          <div class="field intl-only"><label>為替レート</label><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} onchange="updateInputRow(${index}, 'exchangeRate', this.value)"></div>
+          <div class="field intl-only"><label>手入力金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" onchange="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
           
-          <div class="field domestic-only"><label>金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
+          <div class="field domestic-only"><label>金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" placeholder="0" onchange="updateInputRow(${index}, 'amount', this.value)"></div>
           
           <div class="field"><label>精算状態</label><select onchange="updateInputRow(${index}, 'settlementStatus', this.value)">${makeOptions(settlementStatuses, row.settlementStatus)}</select></div>
           <div class="field"><label>メモ</label><input type="text" value="${escapeHTML(row.note)}" placeholder="任意" onchange="updateInputRow(${index}, 'note', this.value)"></div>
@@ -1656,12 +1667,12 @@
         <td data-label="負担対象"><select onchange="updateRow(${index}, 'expenseType', this.value)">${makeOptions(expenseTypes, row.expenseType)}</select></td>
         
         <td class="intl-only" data-label="通貨"><select onchange="updateRow(${index}, 'currency', this.value); setDefaultRateForExpense(${index});">${makeCurrencyOptions(row.currency)}</select></td>
-        <td class="intl-only" data-label="現地通貨額"><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" oninput="updateRow(${index}, 'amount', this.value)"></td>
-        <td class="intl-only" data-label="為替レート"><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} oninput="updateRow(${index}, 'exchangeRate', this.value)"></td>
-        <td class="intl-only" data-label="手入力金額(円)"><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" oninput="updateRow(${index}, 'jpyAmount', this.value)"></td>
+        <td class="intl-only" data-label="現地通貨額"><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" onchange="updateRow(${index}, 'amount', this.value)"></td>
+        <td class="intl-only" data-label="為替レート"><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} onchange="updateRow(${index}, 'exchangeRate', this.value)"></td>
+        <td class="intl-only" data-label="手入力金額(円)"><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" onchange="updateRow(${index}, 'jpyAmount', this.value)"></td>
         <td class="intl-only jpy-cell" data-label="精算額(円)">${jpy === "" ? "" : formatYen(jpy)}</td>
         
-        <td class="domestic-only" data-label="金額（円）"><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" oninput="updateRow(${index}, 'amount', this.value)"></td>
+        <td class="domestic-only" data-label="金額（円）"><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" onchange="updateRow(${index}, 'amount', this.value)"></td>
         
         <td data-label="精算状態"><select onchange="updateRow(${index}, 'settlementStatus', this.value)">${makeOptions(settlementStatuses, row.settlementStatus)}</select></td>
         <td data-label="メモ"><input type="text" value="${escapeHTML(row.note)}" onchange="updateRow(${index}, 'note', this.value)"></td>
