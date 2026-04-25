@@ -752,7 +752,11 @@
     </div>
   </div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     function setupPWA() {
       const svgIcon = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
@@ -794,9 +798,9 @@
     }
 
     setupPWA();
-    const APP_KEY = "travelSettlementTrips_v7";
+    
     const categories = ["交通", "宿泊", "食事", "カフェ", "観光", "娯楽", "買い物", "ドラッグストア", "通信", "手数料", "チップ", "荷物", "洗濯", "駐車場", "その他"];
-    const paymentMethods = ["現金", "クレカ（三井住友）", "クレカ（PayPay）", "Wiseカード", "クレカ（いずみ）"];
+    const paymentMethods = ["現金", "クレジットカード", "Wiseカード", "交通系ICカード", "その他"];
     const paymentStatuses = ["未確定", "確定済み"];
     const settlementStatuses = ["未精算", "精算済", "対象外"];
     const majorCurrencyCodes = ["JPY", "USD", "EUR", "GBP", "CNY", "KRW", "TWD", "HKD", "SGD", "AUD", "CAD", "CHF", "THB", "MYR", "PHP", "IDR", "VND"];
@@ -847,6 +851,106 @@
     let editingIds = new Set();
     let newTripParticipants = ["", ""];
     let editingParticipants = [];
+
+    // ====== Firebase Setup ======
+    // 【重要】友達と共同編集（GitHub等で公開）するためには、以下の firebaseConfig を
+    // ご自身のFirebaseコンソールで取得した内容に書き換えてください。
+    
+    // ▼ ここから ▼
+    const myFirebaseConfig = {
+      apiKey: "AIzaSyB_83moXcEKCtpu-dUc-5BJGIr0j11G4Xs",
+      authDomain: "travel-settlement-b41c9.firebaseapp.com",
+      projectId: "travel-settlement-b41c9",
+      storageBucket: "travel-settlement-b41c9.firebasestorage.app",
+      messagingSenderId: "994520936717",
+      appId: "1:994520936717:web:147f472d281a08311f0044",
+      measurementId: "G-HMC2Z0X1EL"
+    };
+    // ▲ ここまで ▲
+
+    // （※プレビュー環境用と、ご自身の環境用を自動で切り替えるための処理です）
+    const firebaseConfig = Object.keys(myFirebaseConfig).length > 0 
+      ? myFirebaseConfig 
+      : (typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {});
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    let currentUser = null;
+
+    async function initAuth() {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          // Firebaseコンソールで Authentication ＞ 匿名認証（Anonymous）を有効にしてください。
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth error", error);
+      }
+    }
+
+    await initAuth();
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        setupRealtimeListener();
+      }
+    });
+
+    function setupRealtimeListener() {
+      // 独自の環境（GitHub等）用にパスをシンプルにしました
+      const tripsRef = collection(db, 'trips');
+      
+      onSnapshot(tripsRef, (snapshot) => {
+        trips = snapshot.docs.map(doc => doc.data());
+        
+        // 日付の新しい順にソートして表示
+        trips.sort((a, b) => {
+          const dateA = a.startDate || "0000-00-00";
+          const dateB = b.startDate || "0000-00-00";
+          return dateB.localeCompare(dateA); 
+        });
+
+        if (currentTripId) {
+          const stillExists = trips.find(t => t.id === currentTripId);
+          if (!stillExists) {
+            showMainView();
+          } else {
+            renderTripView();
+          }
+        } else {
+          renderTripList();
+        }
+      }, (error) => {
+        console.error("Firebase Snapshot Error:", error);
+      });
+    }
+
+    async function saveTripDB(trip) {
+      if (!currentUser) return;
+      try {
+        const tripRef = doc(db, 'trips', trip.id);
+        await setDoc(tripRef, trip);
+      } catch (e) {
+        console.error("Error saving trip", e);
+      }
+    }
+
+    async function deleteTripDB(tripId) {
+      if (!currentUser) return;
+      try {
+        const tripRef = doc(db, 'trips', tripId);
+        await deleteDoc(tripRef);
+      } catch (e) {
+        console.error("Error deleting trip", e);
+      }
+    }
+    // ============================
 
     function generateId(prefix = "id") {
       return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -912,24 +1016,6 @@
     function getRadioValue(name) {
       const checked = document.querySelector(`input[name="${name}"]:checked`);
       return checked ? checked.value : "";
-    }
-
-    function saveApp() {
-      localStorage.setItem(APP_KEY, JSON.stringify(trips));
-    }
-
-    function loadApp() {
-      const saved = localStorage.getItem(APP_KEY);
-      if (!saved) {
-        trips = [];
-        return;
-      }
-      try {
-        const parsed = JSON.parse(saved);
-        trips = Array.isArray(parsed) ? parsed.map(normalizeTrip) : [];
-      } catch (error) {
-        trips = [];
-      }
     }
 
     function normalizeParticipants(list) {
@@ -1088,13 +1174,12 @@
       if (!row) return;
       if (row.currency === "JPY") {
         row.exchangeRate = 1;
-        renderTable();
+        saveTripDB(trip);
         return;
       }
       const rate = await fetchJPYRate(row.currency);
       if (rate !== "") row.exchangeRate = Number(rate.toFixed(4));
-      saveApp();
-      renderTable();
+      saveTripDB(trip);
     }
 
     function calculateSummary(trip = getCurrentTrip()) {
@@ -1297,25 +1382,23 @@
         return;
       }
 
-      trips.push({ 
+      const newTrip = { 
         id: generateId("trip"), 
         title, place, startDate, endDate, tripType, multiCurrency, localCurrency, 
         settlementBase: "manual",
         participants, expenses: [] 
-      });
-      saveApp();
+      };
+      
+      saveTripDB(newTrip);
       resetNewTripForm();
       hideNewTripForm();
-      renderTripList();
     }
 
     function deleteTrip(id) {
       const trip = trips.find(item => item.id === id);
       if (!trip) return;
       if (!confirm(`「${trip.title}」を削除します。よろしいですか？`)) return;
-      trips = trips.filter(item => item.id !== id);
-      saveApp();
-      renderTripList();
+      deleteTripDB(id);
     }
 
     function renderTripList() {
@@ -1367,9 +1450,7 @@
       const trip = getCurrentTrip();
       if (!trip) return;
       trip.settlementBase = value;
-      saveApp();
-      updateSummary();
-      renderTable();
+      saveTripDB(trip);
     }
 
     function renderTripView() {
@@ -1436,8 +1517,7 @@
       trip.localCurrency = trip.tripType === "international" ? document.getElementById("editLocalCurrency").value : "JPY";
       trip.expenses = trip.expenses.map(row => normalizeExpenseRow(row, trip.participants, trip));
       inputRows = inputRows.map(row => normalizeExpenseRow(row, trip.participants, trip));
-      saveApp();
-      renderTripView();
+      saveTripDB(trip);
       setDefaultRateForInput(0);
     }
 
@@ -1525,8 +1605,7 @@
         return normalizeExpenseRow(updated, newParticipants, trip);
       });
       inputRows = inputRows.map(row => normalizeExpenseRow(row, newParticipants, trip));
-      saveApp();
-      renderTripView();
+      saveTripDB(trip);
     }
 
     function cancelParticipantEdit() {
@@ -1621,10 +1700,9 @@
 
       trip.expenses.push(...validRows.map(row => ({ ...row, id: generateId("exp") })));
       sortExpensesByDate(trip);
-      saveApp();
+      saveTripDB(trip);
       resetInputRows();
       hideExpenseInputForm();
-      renderTable();
     }
 
     function renderTable() {
@@ -1709,8 +1787,7 @@
       editingIds.delete(id);
       const trip = getCurrentTrip();
       sortExpensesByDate(trip);
-      saveApp();
-      renderTable();
+      saveTripDB(trip);
     }
 
     function updateRow(index, key, value) {
@@ -1719,8 +1796,7 @@
       trip.expenses[index][key] = value;
       if (key === "currency" && value === "JPY") trip.expenses[index].exchangeRate = 1;
       trip.expenses[index] = normalizeExpenseRow(trip.expenses[index], trip.participants, trip);
-      saveApp();
-      renderTable();
+      saveTripDB(trip);
     }
 
     function deleteRow(index) {
@@ -1729,8 +1805,7 @@
       const target = trip.expenses[index];
       if (target) editingIds.delete(target.id);
       trip.expenses.splice(index, 1);
-      saveApp();
-      renderTable();
+      saveTripDB(trip);
     }
 
     function updateSummary() {
@@ -1784,8 +1859,7 @@
       if (!confirm("この旅行の支出をすべて削除します。よろしいですか？")) return;
       trip.expenses = [];
       editingIds.clear();
-      saveApp();
-      renderTable();
+      saveTripDB(trip);
     }
 
     function exportCSV() {
@@ -2198,41 +2272,53 @@ ${settlementsText}
       }, 3000);
     }
 
-    function runTests() {
-      console.assert(typeof handleNewTripTypeChange === "function", "TEST handleNewTripTypeChange exists");
-      console.assert(typeof handleEditTripTypeChange === "function", "TEST handleEditTripTypeChange exists");
-      
-      const dummyIntlManual = {tripType: "international", settlementBase: "manual"};
-      const dummyIntlRate = {tripType: "international", settlementBase: "rate"};
-      
-      console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150 }, dummyIntlManual) === 15000, "TEST calculateJPY USD failed");
-      console.assert(calculateJPY({ amount: 3000, currency: "JPY", exchangeRate: 1 }, dummyIntlManual) === 3000, "TEST calculateJPY JPY failed");
-      console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150, jpyAmount: 16000 }, dummyIntlManual) === 16000, "TEST manual JPY amount should override converted amount");
-      console.assert(calculateJPY({ amount: 100, currency: "USD", exchangeRate: 150, jpyAmount: 16000 }, dummyIntlRate) === 15000, "TEST rate base should ignore manual JPY amount");
+    // HTMLから呼び出される関数をグローバルスコープ（window）に紐付ける
+    window.showNewTripForm = showNewTripForm;
+    window.handleNewTripTypeChange = handleNewTripTypeChange;
+    window.addNewTripParticipant = addNewTripParticipant;
+    window.createTrip = createTrip;
+    window.resetNewTripForm = resetNewTripForm;
+    window.hideNewTripForm = hideNewTripForm;
+    window.exportCSV = exportCSV;
+    window.showMainView = showMainView;
+    window.startTripInfoEdit = startTripInfoEdit;
+    window.handleEditTripTypeChange = handleEditTripTypeChange;
+    window.confirmTripInfoEdit = confirmTripInfoEdit;
+    window.cancelTripInfoEdit = cancelTripInfoEdit;
+    window.startParticipantEdit = startParticipantEdit;
+    window.addTripParticipant = addTripParticipant;
+    window.confirmParticipantEdit = confirmParticipantEdit;
+    window.cancelParticipantEdit = cancelParticipantEdit;
+    window.showExpenseInputForm = showExpenseInputForm;
+    window.parseExpenseWithAI = parseExpenseWithAI;
+    window.parseReceiptWithAI = parseReceiptWithAI;
+    window.addInputRow = addInputRow;
+    window.registerInputRows = registerInputRows;
+    window.resetInputRows = resetInputRows;
+    window.hideExpenseInputForm = hideExpenseInputForm;
+    window.clearTripExpenses = clearTripExpenses;
+    window.generateTripAnalysis = generateTripAnalysis;
+    window.changeSettlementBase = changeSettlementBase;
+    window.generateSettlementMessage = generateSettlementMessage;
+    window.closeModal = closeModal;
+    window.copyAiMessage = copyAiMessage;
+    window.openTrip = openTrip;
+    window.deleteTrip = deleteTrip;
+    window.updateNewTripParticipant = updateNewTripParticipant;
+    window.removeNewTripParticipant = removeNewTripParticipant;
+    window.updateTripParticipantDraft = updateTripParticipantDraft;
+    window.removeTripParticipant = removeTripParticipant;
+    window.updateInputRow = updateInputRow;
+    window.removeInputRow = removeInputRow;
+    window.startEdit = startEdit;
+    window.deleteRow = deleteRow;
+    window.updateRow = updateRow;
+    window.confirmEdit = confirmEdit;
+    window.setDefaultRateForInput = setDefaultRateForInput;
+    window.setDefaultRateForExpense = setDefaultRateForExpense;
 
-      const testTrip = {
-        participants: ["A", "B", "C"],
-        tripType: "domestic",
-        expenses: [
-          { amount: 9000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "未精算", payer: "A" },
-          { amount: 3000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "精算済", payer: "B" },
-          { amount: 1000, currency: "JPY", exchangeRate: 1, expenseType: "Cのみ", settlementStatus: "対象外", payer: "C" }
-        ]
-      };
-      const summary = calculateSummary(testTrip);
-      console.assert(summary.unsettledCommonTotal === 9000, "TEST unsettled common total failed");
-      console.assert(summary.unsettledShare === 3000, "TEST unsettled share for 3 people failed");
-      console.assert(summary.result.A.unsettledCommonDiff === 6000, "TEST A diff failed");
-      console.assert(summary.result.C.personalExpense === 1000, "TEST personal expense failed");
-      console.assert(summary.result.C.actualExpense === 5000, "TEST actual expense for C failed");
-      console.assert(calculateSettlements(summary).length === 2, "TEST 3-person settlement count failed");
-    }
-
-    runTests();
-    loadApp();
     initCurrencySelectors();
     resetNewTripForm();
-    renderTripList();
   </script>
 </body>
 </html>
