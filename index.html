@@ -157,20 +157,26 @@
     }
     
     #tripView[data-trip-type="international"] .input-row {
-      /* 日付の列を160pxに広げてはみ出しを防ぐ */
-      grid-template-columns: 160px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
-      min-width: 1720px;
+      /* 日付の列を150pxに広げてはみ出しを防ぐ */
+      grid-template-columns: 150px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
+      min-width: 1730px;
     }
     #tripView[data-trip-type="domestic"] .input-row {
-      /* 日付の列を160pxに広げてはみ出しを防ぐ */
-      grid-template-columns: 160px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
-      min-width: 1170px;
+      grid-template-columns: 150px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
+      min-width: 1180px;
     }
     
     .input-row .field:last-child {
       display: flex;
       justify-content: center;
       align-items: flex-end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      min-width: 0;
     }
 
     .field label {
@@ -184,7 +190,7 @@
     input, select {
       width: 100%;
       max-width: 100%;
-      min-width: 0; /* 追加: フレックス内等での縮小を許可してはみ出し防止 */
+      min-width: 0;
       min-height: 40px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -192,6 +198,11 @@
       font-size: 14px;
       background: #fff;
       transition: border-color 0.2s;
+    }
+
+    input[type="date"] {
+      appearance: none;
+      -webkit-appearance: none;
     }
     
     input:focus, select:focus {
@@ -209,6 +220,7 @@
     }
     .date-range input {
       flex: 1;
+      min-width: 0;
     }
     .date-range span {
       color: var(--muted);
@@ -1240,7 +1252,7 @@
         div.innerHTML = `
           <div class="field">
             <label>参加者${index + 1}</label>
-            <input type="text" value="${escapeHTML(name)}" placeholder="参加者名を入力" onchange="updateNewTripParticipant(${index}, this.value)">
+            <input type="text" value="${escapeHTML(name)}" placeholder="参加者名を入力" oninput="updateNewTripParticipant(${index}, this.value)">
           </div>
           <button class="danger icon" onclick="removeNewTripParticipant(${index})" aria-label="削除">－</button>
         `;
@@ -1461,7 +1473,7 @@
         div.innerHTML = `
           <div class="field">
             <label>参加者${index + 1}</label>
-            <input type="text" value="${escapeHTML(name)}" placeholder="参加者名を入力" onchange="updateTripParticipantDraft(${index}, this.value)">
+            <input type="text" value="${escapeHTML(name)}" placeholder="参加者名を入力" oninput="updateTripParticipantDraft(${index}, this.value)">
           </div>
           <button class="danger icon" onclick="removeTripParticipant(${index})" aria-label="削除">－</button>
         `;
@@ -1545,8 +1557,8 @@
         const div = document.createElement("div");
         div.className = "input-row";
         div.innerHTML = `
-          <div class="field"><label>日付</label><input type="date" value="${escapeHTML(row.date)}" onchange="updateInputRow(${index}, 'date', this.value)"></div>
-          <div class="field"><label>内容</label><input type="text" value="${escapeHTML(row.description)}" placeholder="例：昼食" onchange="updateInputRow(${index}, 'description', this.value)"></div>
+          <div class="field"><label>日付</label><input type="date" value="${escapeHTML(row.date)}" oninput="updateInputRow(${index}, 'date', this.value)"></div>
+          <div class="field"><label>内容</label><input type="text" value="${escapeHTML(row.description)}" placeholder="例：昼食" oninput="updateInputRow(${index}, 'description', this.value)"></div>
           <div class="field"><label>分類</label><select onchange="updateInputRow(${index}, 'category', this.value)">${makeOptions(categories, row.category)}</select></div>
           <div class="field"><label>支払方法</label><select onchange="updateInputRow(${index}, 'paymentMethod', this.value)">${makeOptions(paymentMethods, row.paymentMethod)}</select></div>
           <div class="field"><label>支払状況</label><select onchange="updateInputRow(${index}, 'paymentStatus', this.value)">${makeOptions(paymentStatuses, row.paymentStatus)}</select></div>
@@ -1554,14 +1566,14 @@
           <div class="field"><label>負担対象</label><select onchange="updateInputRow(${index}, 'expenseType', this.value)">${makeOptions(expenseTypes, row.expenseType)}</select></div>
           
           <div class="field intl-only"><label>通貨</label><select onchange="updateInputRow(${index}, 'currency', this.value); setDefaultRateForInput(${index});">${makeCurrencyOptions(row.currency)}</select></div>
-          <div class="field intl-only"><label>現地通貨額</label><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" placeholder="0" onchange="updateInputRow(${index}, 'amount', this.value)"></div>
-          <div class="field intl-only"><label>為替レート</label><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} onchange="updateInputRow(${index}, 'exchangeRate', this.value)"></div>
-          <div class="field intl-only"><label>手入力金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" onchange="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
+          <div class="field intl-only"><label>現地通貨額</label><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
+          <div class="field intl-only"><label>為替レート</label><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} oninput="updateInputRow(${index}, 'exchangeRate', this.value)"></div>
+          <div class="field intl-only"><label>手入力金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" placeholder="任意" oninput="updateInputRow(${index}, 'jpyAmount', this.value)"></div>
           
-          <div class="field domestic-only"><label>金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" placeholder="0" onchange="updateInputRow(${index}, 'amount', this.value)"></div>
+          <div class="field domestic-only"><label>金額（円）</label><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" placeholder="0" oninput="updateInputRow(${index}, 'amount', this.value)"></div>
           
           <div class="field"><label>精算状態</label><select onchange="updateInputRow(${index}, 'settlementStatus', this.value)">${makeOptions(settlementStatuses, row.settlementStatus)}</select></div>
-          <div class="field"><label>メモ</label><input type="text" value="${escapeHTML(row.note)}" placeholder="任意" onchange="updateInputRow(${index}, 'note', this.value)"></div>
+          <div class="field"><label>メモ</label><input type="text" value="${escapeHTML(row.note)}" placeholder="任意" oninput="updateInputRow(${index}, 'note', this.value)"></div>
           <div class="field"><label>&nbsp;</label><button class="danger icon" onclick="removeInputRow(${index})" aria-label="削除">－</button></div>
         `;
         inputList.appendChild(div);
@@ -1570,8 +1582,10 @@
 
     function updateInputRow(index, key, value) {
       inputRows[index][key] = value;
-      if (key === "currency" && value === "JPY") inputRows[index].exchangeRate = 1;
-      renderInputRows();
+      // 金額などを入力中に画面が再描画（フォーカス外れ）されないよう、renderInputRows()は呼ばない
+      if (key === "currency" && value === "JPY") {
+        inputRows[index].exchangeRate = 1;
+      }
     }
 
     function addInputRow() {
