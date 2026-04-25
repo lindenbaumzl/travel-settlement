@@ -114,7 +114,7 @@
       display: grid; 
       gap: 12px; 
       margin-bottom: 16px;
-      overflow-x: auto; /* 画面が狭いときに圧縮されず横スクロールできるようにする */
+      overflow-x: auto;
       padding-bottom: 4px;
     }
 
@@ -157,14 +157,14 @@
     }
     
     #tripView[data-trip-type="international"] .input-row {
-      /* 日付の列を130pxから140pxに広げてはみ出しにくくし、全体の最低幅を確保 */
-      grid-template-columns: 140px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
-      min-width: 1700px;
+      /* 日付の列を160pxに広げてはみ出しを防ぐ */
+      grid-template-columns: 160px 1.4fr 120px 150px 110px 120px 130px 200px 120px 120px 140px 120px 1fr 40px;
+      min-width: 1720px;
     }
     #tripView[data-trip-type="domestic"] .input-row {
-      /* 国内旅行用レイアウトの最低幅確保 */
-      grid-template-columns: 140px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
-      min-width: 1150px;
+      /* 日付の列を160pxに広げてはみ出しを防ぐ */
+      grid-template-columns: 160px 1.4fr 120px 150px 110px 120px 130px 140px 120px 1fr 40px;
+      min-width: 1170px;
     }
     
     .input-row .field:last-child {
@@ -184,6 +184,7 @@
     input, select {
       width: 100%;
       max-width: 100%;
+      min-width: 0; /* 追加: フレックス内等での縮小を許可してはみ出し防止 */
       min-height: 40px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -344,8 +345,8 @@
     }
 
     table.expense-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    #tripView[data-trip-type="international"] table.expense-table { min-width: 1980px; }
-    #tripView[data-trip-type="domestic"] table.expense-table { min-width: 1300px; }
+    #tripView[data-trip-type="international"] table.expense-table { min-width: 2000px; }
+    #tripView[data-trip-type="domestic"] table.expense-table { min-width: 1320px; }
 
     .expense-table th, .expense-table td { border: 1px solid var(--border); padding: 10px 8px; vertical-align: middle; }
     .expense-table th { position: sticky; top: 0; z-index: 2; background: var(--header); white-space: nowrap; text-align: center; }
@@ -430,13 +431,18 @@
       button.icon { width: 46px; height: 46px; border-radius: 10px; }
       input, select { min-height: 46px; font-size: 16px; border-radius: 10px; padding: 10px 14px; }
       
+      .input-list {
+        overflow-x: visible; /* スマホでは横スクロールを解除 */
+        padding-bottom: 0;
+      }
+      
       .input-row { 
         grid-template-columns: 1fr !important; 
         gap: 20px !important; 
         padding: 20px !important; 
         border-radius: 14px; 
         align-items: flex-start !important; 
-        min-width: 0 !important; /* スマホ時は横幅固定を解除 */
+        min-width: 0 !important; 
       }
       .input-row .field:last-child {
         width: 100%;
@@ -698,7 +704,7 @@
           <table class="expense-table">
             <thead>
               <tr>
-                <th style="width: 120px;">日付</th>
+                <th style="width: 140px;">日付</th>
                 <th style="width: 240px;">内容</th>
                 <th style="width: 120px;">分類</th>
                 <th style="width: 160px;">支払方法</th>
