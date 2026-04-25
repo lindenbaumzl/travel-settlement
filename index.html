@@ -853,10 +853,6 @@
     let editingParticipants = [];
 
     // ====== Firebase Setup ======
-    // 【重要】友達と共同編集（GitHub等で公開）するためには、以下の firebaseConfig を
-    // ご自身のFirebaseコンソールで取得した内容に書き換えてください。
-    
-    // ▼ ここから ▼
     const myFirebaseConfig = {
       apiKey: "AIzaSyB_83moXcEKCtpu-dUc-5BJGIr0j11G4Xs",
       authDomain: "travel-settlement-b41c9.firebaseapp.com",
@@ -866,9 +862,7 @@
       appId: "1:994520936717:web:147f472d281a08311f0044",
       measurementId: "G-HMC2Z0X1EL"
     };
-    // ▲ ここまで ▲
 
-    // （※プレビュー環境用と、ご自身の環境用を自動で切り替えるための処理です）
     const firebaseConfig = Object.keys(myFirebaseConfig).length > 0 
       ? myFirebaseConfig 
       : (typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {});
@@ -885,7 +879,6 @@
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
-          // Firebaseコンソールで Authentication ＞ 匿名認証（Anonymous）を有効にしてください。
           await signInAnonymously(auth);
         }
       } catch (error) {
@@ -903,13 +896,11 @@
     });
 
     function setupRealtimeListener() {
-      // 独自の環境（GitHub等）用にパスをシンプルにしました
       const tripsRef = collection(db, 'trips');
       
       onSnapshot(tripsRef, (snapshot) => {
         trips = snapshot.docs.map(doc => doc.data());
         
-        // 日付の新しい順にソートして表示
         trips.sort((a, b) => {
           const dateA = a.startDate || "0000-00-00";
           const dateB = b.startDate || "0000-00-00";
@@ -932,22 +923,34 @@
     }
 
     async function saveTripDB(trip) {
-      if (!currentUser) return;
+      if (!currentUser) {
+        showModal("認証エラー", "データベースに接続されていません。<br>Firebaseコンソールの「Authentication」>「Sign-in method」から「匿名（Anonymous）」を有効にしているか確認してください。");
+        return false;
+      }
       try {
         const tripRef = doc(db, 'trips', trip.id);
         await setDoc(tripRef, trip);
+        return true;
       } catch (e) {
         console.error("Error saving trip", e);
+        showModal("保存エラー", "データの保存に失敗しました。<br>Firebaseコンソールの「Firestore Database」>「ルール」が正しく設定されているか確認してください。<br><br><small>詳細: " + escapeHTML(e.message) + "</small>");
+        return false;
       }
     }
 
     async function deleteTripDB(tripId) {
-      if (!currentUser) return;
+      if (!currentUser) {
+        showModal("認証エラー", "データベースに接続されていません。");
+        return false;
+      }
       try {
         const tripRef = doc(db, 'trips', tripId);
         await deleteDoc(tripRef);
+        return true;
       } catch (e) {
         console.error("Error deleting trip", e);
+        showModal("削除エラー", "データの削除に失敗しました。<br><small>詳細: " + escapeHTML(e.message) + "</small>");
+        return false;
       }
     }
     // ============================
@@ -1174,12 +1177,12 @@
       if (!row) return;
       if (row.currency === "JPY") {
         row.exchangeRate = 1;
-        saveTripDB(trip);
+        await saveTripDB(trip);
         return;
       }
       const rate = await fetchJPYRate(row.currency);
       if (rate !== "") row.exchangeRate = Number(rate.toFixed(4));
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
     function calculateSummary(trip = getCurrentTrip()) {
@@ -1356,14 +1359,14 @@
 
     function removeNewTripParticipant(index) {
       if (newTripParticipants.length <= 1) {
-        alert("参加者欄は最低1つ必要です。");
+        showModal("エラー", "参加者欄は最低1つ必要です。");
         return;
       }
       newTripParticipants.splice(index, 1);
       renderNewTripParticipants();
     }
 
-    function createTrip() {
+    async function createTrip() {
       const title = document.getElementById("newTripTitle").value.trim();
       const place = document.getElementById("newTripPlace").value.trim();
       const startDate = document.getElementById("newTripStart").value;
@@ -1374,11 +1377,11 @@
       const participants = normalizeParticipants(newTripParticipants);
 
       if (!title) {
-        alert("旅行名を入力してください。");
+        showModal("エラー", "旅行名を入力してください。");
         return;
       }
       if (participants.length === 0) {
-        alert("参加者を1名以上入力してください。");
+        showModal("エラー", "参加者を1名以上入力してください。");
         return;
       }
 
@@ -1389,16 +1392,18 @@
         participants, expenses: [] 
       };
       
-      saveTripDB(newTrip);
-      resetNewTripForm();
-      hideNewTripForm();
+      const success = await saveTripDB(newTrip);
+      if (success) {
+        resetNewTripForm();
+        hideNewTripForm();
+      }
     }
 
-    function deleteTrip(id) {
+    async function deleteTrip(id) {
       const trip = trips.find(item => item.id === id);
       if (!trip) return;
       if (!confirm(`「${trip.title}」を削除します。よろしいですか？`)) return;
-      deleteTripDB(id);
+      await deleteTripDB(id);
     }
 
     function renderTripList() {
@@ -1446,11 +1451,11 @@
       setDefaultRateForInput(0);
     }
 
-    function changeSettlementBase(value) {
+    async function changeSettlementBase(value) {
       const trip = getCurrentTrip();
       if (!trip) return;
       trip.settlementBase = value;
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
     function renderTripView() {
@@ -1505,7 +1510,7 @@
       handleEditTripTypeChange();
     }
 
-    function confirmTripInfoEdit() {
+    async function confirmTripInfoEdit() {
       const trip = getCurrentTrip();
       if (!trip) return;
       trip.title = document.getElementById("editTripTitle").value.trim() || "無題の旅行";
@@ -1517,8 +1522,11 @@
       trip.localCurrency = trip.tripType === "international" ? document.getElementById("editLocalCurrency").value : "JPY";
       trip.expenses = trip.expenses.map(row => normalizeExpenseRow(row, trip.participants, trip));
       inputRows = inputRows.map(row => normalizeExpenseRow(row, trip.participants, trip));
-      saveTripDB(trip);
-      setDefaultRateForInput(0);
+      
+      const success = await saveTripDB(trip);
+      if (success) {
+        setDefaultRateForInput(0);
+      }
     }
 
     function cancelTripInfoEdit() {
@@ -1572,19 +1580,19 @@
 
     function removeTripParticipant(index) {
       if (editingParticipants.length <= 1) {
-        alert("参加者欄は最低1つ必要です。");
+        showModal("エラー", "参加者欄は最低1つ必要です。");
         return;
       }
       editingParticipants.splice(index, 1);
       renderTripParticipantEditList();
     }
 
-    function confirmParticipantEdit() {
+    async function confirmParticipantEdit() {
       const trip = getCurrentTrip();
       const oldParticipants = [...trip.participants];
       const newParticipants = normalizeParticipants(editingParticipants);
       if (newParticipants.length === 0) {
-        alert("参加者を1名以上入力してください。");
+        showModal("エラー", "参加者を1名以上入力してください。");
         return;
       }
 
@@ -1605,7 +1613,7 @@
         return normalizeExpenseRow(updated, newParticipants, trip);
       });
       inputRows = inputRows.map(row => normalizeExpenseRow(row, newParticipants, trip));
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
     function cancelParticipantEdit() {
@@ -1686,7 +1694,7 @@
       setDefaultRateForInput(0);
     }
 
-    function registerInputRows() {
+    async function registerInputRows() {
       const trip = getCurrentTrip();
       if (!trip) return;
       const validRows = inputRows
@@ -1694,15 +1702,20 @@
         .filter(row => row.date || row.description || row.amount !== "" || row.jpyAmount !== "");
 
       if (validRows.length === 0) {
-        alert("登録する内容を入力してください。");
+        showModal("エラー", "登録する内容を入力してください。");
         return;
       }
 
       trip.expenses.push(...validRows.map(row => ({ ...row, id: generateId("exp") })));
       sortExpensesByDate(trip);
-      saveTripDB(trip);
-      resetInputRows();
-      hideExpenseInputForm();
+      
+      const success = await saveTripDB(trip);
+      if (success) {
+        resetInputRows();
+        hideExpenseInputForm();
+      } else {
+        trip.expenses.splice(trip.expenses.length - validRows.length, validRows.length);
+      }
     }
 
     function renderTable() {
@@ -1783,29 +1796,29 @@
       renderTable();
     }
 
-    function confirmEdit(id) {
+    async function confirmEdit(id) {
       editingIds.delete(id);
       const trip = getCurrentTrip();
       sortExpensesByDate(trip);
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
-    function updateRow(index, key, value) {
+    async function updateRow(index, key, value) {
       const trip = getCurrentTrip();
       if (!trip) return;
       trip.expenses[index][key] = value;
       if (key === "currency" && value === "JPY") trip.expenses[index].exchangeRate = 1;
       trip.expenses[index] = normalizeExpenseRow(trip.expenses[index], trip.participants, trip);
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
-    function deleteRow(index) {
+    async function deleteRow(index) {
       const trip = getCurrentTrip();
       if (!trip) return;
       const target = trip.expenses[index];
       if (target) editingIds.delete(target.id);
       trip.expenses.splice(index, 1);
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
     function updateSummary() {
@@ -1853,13 +1866,13 @@
       list.innerHTML = settlements.map(item => `<div class="settlement-result">${escapeHTML(item.from)} → ${escapeHTML(item.to)}：${formatYen(item.amount)}</div>`).join("");
     }
 
-    function clearTripExpenses() {
+    async function clearTripExpenses() {
       const trip = getCurrentTrip();
       if (!trip) return;
       if (!confirm("この旅行の支出をすべて削除します。よろしいですか？")) return;
       trip.expenses = [];
       editingIds.clear();
-      saveTripDB(trip);
+      await saveTripDB(trip);
     }
 
     function exportCSV() {
