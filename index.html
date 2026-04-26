@@ -1838,7 +1838,7 @@
       let html = `
         <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
           <input type="radio" name="expenseFilter" value="all" ${currentExpenseFilter === 'all' ? 'checked' : ''} onchange="setExpenseFilter(this.value)">
-          すべての支出
+          すべて
         </label>
       `;
       
@@ -1847,7 +1847,7 @@
         html += `
           <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
             <input type="radio" name="expenseFilter" value="${escapeHTML(name)}" ${isChecked} onchange="setExpenseFilter(this.value)">
-            ${escapeHTML(name)}さんの支出
+            ${escapeHTML(name)}
           </label>
         `;
       });
