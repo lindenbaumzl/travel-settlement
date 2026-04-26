@@ -108,6 +108,7 @@
     }
 
     .radio-label input { width: auto; min-height: auto; cursor: pointer; }
+    .radio-label.left-align { justify-content: flex-start !important; }
 
     .participant-list { display: grid; gap: 12px; margin-bottom: 16px; }
     
@@ -730,9 +731,10 @@
       </div>
 
       <section class="table-card">
-        <div class="table-header">
-          <h2>支出一覧</h2>
-          <span class="note">通常は表示のみ。修正する場合は「編集」を押してください。日付順に自動並び替えされます。</span>
+        <div class="table-header" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+          <h2 style="margin: 0; width: 100%;">支出一覧</h2>
+          <span class="note" style="margin-top: 0; margin-bottom: 8px; width: 100%;">通常は表示のみ。修正する場合は「編集」を押してください。日付順に自動並び替えされます。</span>
+          <div id="expenseFilterContainer" class="radio-row" style="min-height: auto; gap: 8px; width: 100%;"></div>
         </div>
         <div class="table-wrap">
           <table class="expense-table">
@@ -882,6 +884,7 @@
     let editingIds = new Set();
     let newTripParticipants = ["", ""];
     let editingParticipants = [];
+    let currentExpenseFilter = "all";
 
     // ====== グローバルスコープへの関数バインディング ======
     window.showNewTripForm = showNewTripForm;
@@ -923,6 +926,7 @@
     window.setDefaultRateForInput = setDefaultRateForInput;
     window.setDefaultRateForExpense = setDefaultRateForExpense;
     window.toggleChartParticipant = toggleChartParticipant;
+    window.setExpenseFilter = setExpenseFilter;
 
     // ====== Firebase Setup ======
     const myFirebaseConfig = {
@@ -1549,6 +1553,7 @@
     function openTrip(id) {
       currentTripId = id;
       editingIds.clear();
+      currentExpenseFilter = "all";
       inputRows = [createEmptyExpenseRow()];
       document.getElementById("mainView").classList.add("hidden");
       document.getElementById("tripView").classList.remove("hidden");
@@ -1824,32 +1829,76 @@
       }
     }
 
+    function renderExpenseFilters() {
+      const container = document.getElementById("expenseFilterContainer");
+      if (!container) return;
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      
+      let html = `
+        <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
+          <input type="radio" name="expenseFilter" value="all" ${currentExpenseFilter === 'all' ? 'checked' : ''} onchange="setExpenseFilter(this.value)">
+          すべての支出
+        </label>
+      `;
+      
+      trip.participants.forEach(name => {
+        const isChecked = currentExpenseFilter === name ? 'checked' : '';
+        html += `
+          <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
+            <input type="radio" name="expenseFilter" value="${escapeHTML(name)}" ${isChecked} onchange="setExpenseFilter(this.value)">
+            ${escapeHTML(name)}さんの支出
+          </label>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function setExpenseFilter(val) {
+      currentExpenseFilter = val;
+      renderTable();
+    }
+
     function renderTable() {
       const trip = getCurrentTrip();
       if (!trip) return;
+      
+      // 参加者が削除されて現在のフィルタ対象が存在しなくなった場合リセット
+      if (currentExpenseFilter !== "all" && !trip.participants.includes(currentExpenseFilter)) {
+          currentExpenseFilter = "all";
+      }
+
       const tbody = document.getElementById("expenseBody");
       const emptyMessage = document.getElementById("emptyMessage");
       tbody.innerHTML = "";
 
       sortExpensesByDate(trip);
-      emptyMessage.style.display = trip.expenses.length === 0 ? "block" : "none";
+      
+      let filteredExpenses = trip.expenses;
+      if (currentExpenseFilter !== "all") {
+        filteredExpenses = trip.expenses.filter(row => {
+           return row.expenseType === "共通" || row.expenseType === `${currentExpenseFilter}のみ`;
+        });
+      }
 
-      trip.expenses.forEach(row => {
+      emptyMessage.style.display = filteredExpenses.length === 0 ? "block" : "none";
+
+      filteredExpenses.forEach((row, displayIndex) => {
         const index = trip.expenses.findIndex(item => item.id === row.id);
         const jpy = calculateJPY(row, trip);
         const isEditing = editingIds.has(row.id);
         const tr = document.createElement("tr");
         tr.className = isEditing ? "editing" : "";
-        tr.innerHTML = isEditing ? renderEditableRow(row, index, jpy) : renderDisplayRow(row, index, jpy);
+        tr.innerHTML = isEditing ? renderEditableRow(row, index, jpy, displayIndex) : renderDisplayRow(row, index, jpy, displayIndex);
         tbody.appendChild(tr);
       });
 
       updateSummary();
     }
 
-    function renderDisplayRow(row, index, jpy) {
+    function renderDisplayRow(row, index, jpy, displayIndex = index) {
       return `
-        <td data-label="No." style="text-align: center;">${index + 1}</td>
+        <td data-label="No." style="text-align: center;">${displayIndex + 1}</td>
         <td data-label="日付">${escapeHTML(row.date)}</td>
         <td data-label="内容">${escapeHTML(row.description)}</td>
         <td data-label="分類">${escapeHTML(row.category)}</td>
@@ -1872,11 +1921,11 @@
       `;
     }
 
-    function renderEditableRow(row, index, jpy) {
+    function renderEditableRow(row, index, jpy, displayIndex = index) {
       const participants = getParticipants();
       const expenseTypes = getExpenseTypes();
       return `
-        <td data-label="No." style="text-align: center;">${index + 1}</td>
+        <td data-label="No." style="text-align: center;">${displayIndex + 1}</td>
         <td data-label="日付"><input type="date" value="${escapeHTML(row.date)}" onchange="updateRow(${index}, 'date', this.value)"></td>
         <td data-label="内容"><input type="text" value="${escapeHTML(row.description)}" onchange="updateRow(${index}, 'description', this.value)"></td>
         <td data-label="分類"><select onchange="updateRow(${index}, 'category', this.value)">${makeOptions(categories, row.category)}</select></td>
@@ -1945,6 +1994,7 @@
       renderSettlementTable(summary);
       renderChartControls(summary);
       renderCharts(summary);
+      renderExpenseFilters();
     }
 
     function renderSummaryTable(summary) {
@@ -2046,7 +2096,7 @@
       summary.participants.forEach(name => {
         const isChecked = selectedChartParticipants.has(name) ? 'checked' : '';
         html += `
-          <label class="radio-label" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; justify-content: flex-start;">
+          <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
             <input type="checkbox" value="${escapeHTML(name)}" ${isChecked} onchange="toggleChartParticipant(this)">
             ${escapeHTML(name)}
           </label>
