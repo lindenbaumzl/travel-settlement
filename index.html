@@ -525,16 +525,19 @@
 <body>
   <div class="container">
     <div id="mainView">
-      <div class="main-header">
-        <div>
+      <div class="main-header" style="align-items: flex-start;">
+        <div style="flex: 1; min-width: 250px;">
           <h1>旅行費用精算ツール</h1>
-          <p class="subtitle">複数の旅行を追加・記録・編集・削除できます。各旅行ごとに参加者、通貨、出費、精算結果を管理します。</p>
+          <p class="subtitle" style="margin-bottom: 0;">複数の旅行を追加・記録・編集・削除できます。各旅行ごとに参加者、通貨、出費、精算結果を管理します。</p>
+        </div>
+        <div style="margin-top: 4px;">
+          <button class="secondary small wrap-text" onclick="shareApp()">URL共有</button>
         </div>
       </div>
 
-      <section class="card">
+      <section class="card" style="margin-top: 20px;">
         <div class="section-header">
-          <h2>旅行一覧</h2>
+          <h2>登録旅行一覧</h2>
           <button onclick="showNewTripForm()">新規追加</button>
         </div>
         <div id="tripList" class="trip-grid"></div>
@@ -548,7 +551,7 @@
         </div>
         <div class="form-grid">
           <div class="field"><label>旅行名</label><input id="newTripTitle" type="text" placeholder="例：2026ロサンゼルス旅行"></div>
-          <div class="field"><label>行き先</label><input id="newTripPlace" type="text" placeholder="例：ロサンゼルス"></div>
+          <div class="field"><label>目的地</label><input id="newTripPlace" type="text" placeholder="例：ロサンゼルス"></div>
           <div class="field">
             <label>期間</label>
             <div class="date-range">
@@ -609,7 +612,7 @@
         <div id="tripInfoEditArea" class="hidden">
           <div class="form-grid">
             <div class="field"><label>旅行名</label><input id="editTripTitle" type="text"></div>
-            <div class="field"><label>行き先</label><input id="editTripPlace" type="text"></div>
+            <div class="field"><label>目的地</label><input id="editTripPlace" type="text"></div>
             <div class="field">
               <label>期間</label>
               <div class="date-range">
@@ -751,8 +754,8 @@
                 <th class="intl-only" style="width: 200px;">通貨</th>
                 <th class="intl-only" style="width: 130px;">現地通貨額</th>
                 <th class="intl-only" style="width: 130px;">為替レート</th>
-                <th class="intl-only" style="width: 150px;">手入力金額(円)</th>
-                <th class="intl-only" style="width: 140px;">精算額(円)</th>
+                <th class="intl-only" style="width: 150px;">任意入力額(円)</th>
+                <th class="intl-only" style="width: 140px;">円換算額</th>
                 <th class="domestic-only" style="width: 140px;">金額（円）</th>
                 <th style="width: 120px;">精算状態</th>
                 <th style="width: 240px;">メモ</th>
@@ -927,6 +930,7 @@
     window.setDefaultRateForExpense = setDefaultRateForExpense;
     window.toggleChartParticipant = toggleChartParticipant;
     window.setExpenseFilter = setExpenseFilter;
+    window.shareApp = shareApp;
 
     // ====== Firebase Setup ======
     const myFirebaseConfig = {
@@ -2276,6 +2280,38 @@
 
     function closeModal() {
       document.getElementById("customModal").classList.add("hidden");
+    }
+
+    function shareApp() {
+      const url = window.location.href.split('?')[0]; // ベースURLを取得
+      
+      if (navigator.share) {
+        navigator.share({
+          title: '旅行費用精算ツール',
+          text: '旅行の費用を簡単に精算・共有できるツールです。',
+          url: url
+        }).catch(err => {
+          if (err.name !== 'AbortError') {
+            console.error('シェアに失敗しました:', err);
+          }
+        });
+      } else {
+        // Web Share APIが使えない場合のフォールバック（クリップボードにコピー）
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showModal("共有", "アプリのURLをクリップボードにコピーしました！<br><br><small style='word-break: break-all;'>" + escapeHTML(url) + "</small>");
+        } catch (err) {
+          showModal("エラー", "URLのコピーに失敗しました。");
+        }
+        document.body.removeChild(textArea);
+      }
     }
 
     function runTests() {
