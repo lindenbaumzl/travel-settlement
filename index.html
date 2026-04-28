@@ -138,16 +138,17 @@
       user-select: none;
       color: var(--text);
       transition: color 0.2s;
-      line-height: 1.4;
+      line-height: 1;
     }
     .radio-label:hover { color: var(--accent-hover); }
     .radio-label input[type="radio"], .radio-label input[type="checkbox"] { 
-      width: 18px; 
-      height: 18px; 
+      width: 12px; 
+      height: 12px; 
       margin: 0;
       cursor: pointer; 
       accent-color: var(--accent);
       flex-shrink: 0;
+      transform: translateY(-1px);
     }
     .radio-label.left-align { justify-content: flex-start !important; }
 
@@ -260,6 +261,26 @@
     }
 
     input[type="number"] { text-align: right; }
+
+    input[type="date"] {
+      cursor: pointer;
+      color: var(--text-dark);
+      font-family: inherit;
+    }
+    
+    /* WebKit系（Chrome, Edge, Safari等）のカレンダーアイコンのスタイル調整 */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      opacity: 0.5;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s ease;
+    }
+    
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+      opacity: 1;
+      background-color: var(--border);
+    }
 
     .date-range { display: flex; align-items: center; gap: 12px; }
     .date-range input { flex: 1; min-width: 0; }
@@ -1541,7 +1562,7 @@
           <div class="trip-meta">支出件数：${trip.expenses.length}件 / 共通費：${formatYen(summary.totalCommonAll)}</div>
           <div class="toolbar">
             <button onclick="openTrip('${trip.id}')">記録を見る</button>
-            <button class="secondary danger" onclick="deleteTrip('${trip.id}')">削除</button>
+            <button class="danger" onclick="deleteTrip('${trip.id}')">削除</button>
           </div>
         `;
         list.appendChild(div);
