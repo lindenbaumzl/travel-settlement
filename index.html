@@ -138,7 +138,7 @@
       user-select: none;
       color: var(--text);
       transition: color 0.2s;
-      line-height: 1;
+      line-height: 1.4;
     }
     .radio-label:hover { color: var(--accent-hover); }
     .radio-label input[type="radio"], .radio-label input[type="checkbox"] { 
@@ -147,6 +147,7 @@
       margin: 0;
       cursor: pointer; 
       accent-color: var(--accent);
+      flex-shrink: 0;
     }
     .radio-label.left-align { justify-content: flex-start !important; }
 
@@ -465,13 +466,13 @@
       align-items: stretch; gap: 12px; min-height: auto;
     }
     #settlementBaseArea .radio-label {
-      display: flex; align-items: flex-start !important; justify-content: flex-start !important;
+      display: flex; align-items: center !important; justify-content: flex-start !important;
       height: 100%; padding: 14px; box-sizing: border-box;
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       background: #fff; transition: border-color 0.2s, box-shadow 0.2s;
     }
     #settlementBaseArea .radio-label:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
-    #settlementBaseArea .radio-label input { margin-top: 3px; }
+    #settlementBaseArea .radio-label input { margin-top: 0; }
 
     @media (max-width: 1200px) {
       .input-row { grid-template-columns: repeat(4, minmax(150px, 1fr)) !important; min-width: 0 !important; }
