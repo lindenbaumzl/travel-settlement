@@ -456,6 +456,43 @@
     }
     .expense-table tr:last-child td { border-bottom: none; }
 
+    /* Excel風フィルターポップアップのスタイル */
+    .filter-popup {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      z-index: 1000;
+      min-width: 180px;
+      display: flex;
+      flex-direction: column;
+      cursor: default;
+      text-align: left;
+      font-weight: normal;
+    }
+    .filter-popup-header {
+      font-size: 13px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-dark);
+    }
+    .filter-popup-list {
+      max-height: 250px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
     .empty-message { padding: 48px 24px; color: var(--muted); text-align: center; font-size: 15px; font-weight: 500; }
     .note { color: var(--muted); font-size: 13px; margin-top: 12px; line-height: 1.6; }
     .warning { background: var(--warning-bg); }
@@ -767,20 +804,107 @@
             <thead>
               <tr>
                 <th style="width: 60px;">No.</th>
-                <th style="width: 140px;">日付</th>
+                
+                <th style="width: 140px; padding: 6px;" id="dateHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'dateFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    日付 <span id="dateFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="dateFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('date')">クリア</button>
+                    </div>
+                    <div id="dateFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
                 <th style="width: 240px;">内容</th>
-                <th style="width: 120px;">分類</th>
-                <th style="width: 160px;">支払方法</th>
-                <th style="width: 120px;">支払状況</th>
-                <th style="width: 130px;">支払者</th>
-                <th style="width: 140px;">負担対象</th>
+                
+                <th style="width: 120px; padding: 6px;" id="categoryHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'categoryFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    分類 <span id="categoryFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="categoryFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('category')">クリア</button>
+                    </div>
+                    <div id="categoryFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
+                <th style="width: 160px; padding: 6px;" id="paymentMethodHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'paymentMethodFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    支払方法 <span id="paymentMethodFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="paymentMethodFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('paymentMethod')">クリア</button>
+                    </div>
+                    <div id="paymentMethodFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
+                <th style="width: 120px; padding: 6px;" id="paymentStatusHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'paymentStatusFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    支払状況 <span id="paymentStatusFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="paymentStatusFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('paymentStatus')">クリア</button>
+                    </div>
+                    <div id="paymentStatusFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
+                <th style="width: 130px; padding: 6px;" id="payerHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'payerFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    支払者 <span id="payerFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="payerFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('payer')">クリア</button>
+                    </div>
+                    <div id="payerFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
+                <th style="width: 140px; padding: 6px;" id="expenseTypeHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'expenseTypeFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    負担対象 <span id="expenseTypeFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="expenseTypeFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('expenseType')">クリア</button>
+                    </div>
+                    <div id="expenseTypeFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
                 <th class="intl-only" style="width: 200px;">通貨</th>
                 <th class="intl-only" style="width: 130px;">現地通貨額</th>
                 <th class="intl-only" style="width: 130px;">為替レート</th>
                 <th class="intl-only" style="width: 150px;">任意入力額(円)</th>
                 <th class="intl-only" style="width: 140px;">円換算額</th>
                 <th class="domestic-only" style="width: 140px;">金額（円）</th>
-                <th style="width: 120px;">精算状態</th>
+                
+                <th style="width: 120px; padding: 6px;" id="settlementStatusHeader">
+                  <div style="display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: background 0.2s;" onclick="toggleFilterPopup(event, 'settlementStatusFilterPopup')" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='transparent'">
+                    精算状態 <span id="settlementStatusFilterIcon" style="font-size: 10px; color: var(--muted);">▼</span>
+                  </div>
+                  <div id="settlementStatusFilterPopup" class="filter-popup hidden" onclick="event.stopPropagation()">
+                    <div class="filter-popup-header">
+                      <span>絞り込み</span>
+                      <button class="small secondary" style="min-height: 24px; padding: 2px 8px; font-size: 11px;" onclick="clearColumnFilter('settlementStatus')">クリア</button>
+                    </div>
+                    <div id="settlementStatusFilterList" class="filter-popup-list"></div>
+                  </div>
+                </th>
+                
                 <th style="width: 240px;">メモ</th>
                 <th style="width: 170px;">操作</th>
               </tr>
@@ -911,6 +1035,15 @@
     let newTripParticipants = ["", ""];
     let editingParticipants = [];
     let currentExpenseFilter = "all";
+    const columnFilters = {
+      date: new Set(),
+      category: new Set(),
+      paymentMethod: new Set(),
+      paymentStatus: new Set(),
+      payer: new Set(),
+      expenseType: new Set(),
+      settlementStatus: new Set()
+    };
 
     // ====== グローバルスコープへの関数バインディング ======
     window.showNewTripForm = showNewTripForm;
@@ -953,6 +1086,9 @@
     window.setDefaultRateForExpense = setDefaultRateForExpense;
     window.toggleChartParticipant = toggleChartParticipant;
     window.setExpenseFilter = setExpenseFilter;
+    window.toggleColumnFilter = toggleColumnFilter;
+    window.toggleFilterPopup = toggleFilterPopup;
+    window.clearColumnFilter = clearColumnFilter;
     window.shareApp = shareApp;
 
     // ====== Firebase Setup ======
@@ -1581,6 +1717,7 @@
       currentTripId = id;
       editingIds.clear();
       currentExpenseFilter = "all";
+      Object.keys(columnFilters).forEach(key => columnFilters[key].clear());
       inputRows = [createEmptyExpenseRow()];
       document.getElementById("mainView").classList.add("hidden");
       document.getElementById("tripView").classList.remove("hidden");
@@ -1863,6 +2000,7 @@
       if (!trip) return;
       
       let html = `
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-dark); margin-right: 4px;">対象者:</span>
         <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; background: #fff; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;">
           <input type="radio" name="expenseFilter" value="all" ${currentExpenseFilter === 'all' ? 'checked' : ''} onchange="setExpenseFilter(this.value)">
           すべて
@@ -1879,12 +2017,88 @@
         `;
       });
       container.innerHTML = html;
+
+      // 列ごとのフィルターの生成（ポップアップ内）
+      renderColumnFilterList(trip, 'date', 'dateFilterList', 'dateFilterIcon');
+      renderColumnFilterList(trip, 'category', 'categoryFilterList', 'categoryFilterIcon');
+      renderColumnFilterList(trip, 'paymentMethod', 'paymentMethodFilterList', 'paymentMethodFilterIcon');
+      renderColumnFilterList(trip, 'paymentStatus', 'paymentStatusFilterList', 'paymentStatusFilterIcon');
+      renderColumnFilterList(trip, 'payer', 'payerFilterList', 'payerFilterIcon');
+      renderColumnFilterList(trip, 'expenseType', 'expenseTypeFilterList', 'expenseTypeFilterIcon');
+      renderColumnFilterList(trip, 'settlementStatus', 'settlementStatusFilterList', 'settlementStatusFilterIcon');
+    }
+
+    function renderColumnFilterList(trip, columnKey, listContainerId, iconId) {
+      const container = document.getElementById(listContainerId);
+      const icon = document.getElementById(iconId);
+      if (!container) return;
+
+      const uniqueValues = [...new Set(trip.expenses.map(e => String(e[columnKey])))].sort();
+      let html = '';
+      if (uniqueValues.length > 0) {
+        uniqueValues.forEach(val => {
+          const displayVal = val === "" ? "未設定" : val;
+          const isChecked = columnFilters[columnKey].has(val) ? 'checked' : '';
+          html += `
+            <label class="radio-label left-align" style="font-weight: normal; font-size: 13px; margin-bottom: 0;">
+              <input type="checkbox" value="${escapeHTML(val)}" ${isChecked} onchange="toggleColumnFilter('${columnKey}', this.value, this.checked)">
+              ${escapeHTML(displayVal)}
+            </label>
+          `;
+        });
+      } else {
+        html = '<span class="note" style="margin:0;">データなし</span>';
+      }
+      container.innerHTML = html;
+      
+      if (icon) {
+        icon.style.color = columnFilters[columnKey].size > 0 ? "var(--accent)" : "var(--muted)";
+      }
     }
 
     function setExpenseFilter(val) {
       currentExpenseFilter = val;
       renderTable();
     }
+
+    function toggleColumnFilter(column, value, checked) {
+      if (checked) {
+        columnFilters[column].add(value);
+      } else {
+        columnFilters[column].delete(value);
+      }
+      renderTable();
+    }
+    
+    function toggleFilterPopup(e, popupId) {
+      e.stopPropagation();
+      // 他のポップアップを閉じる
+      document.querySelectorAll('.filter-popup').forEach(p => {
+        if (p.id !== popupId) p.classList.add('hidden');
+      });
+      const popup = document.getElementById(popupId);
+      if (popup) {
+        popup.classList.toggle('hidden');
+      }
+    }
+
+    function clearColumnFilter(column) {
+      columnFilters[column].clear();
+      renderTable();
+      const popup = document.getElementById(column + 'FilterPopup');
+      if (popup) popup.classList.add('hidden');
+    }
+
+    // どこかをクリックしたらポップアップを閉じる
+    document.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-popup').forEach(popup => {
+        const headerId = popup.id.replace('FilterPopup', 'Header');
+        const header = document.getElementById(headerId);
+        if (!popup.classList.contains('hidden') && header && !header.contains(e.target)) {
+          popup.classList.add('hidden');
+        }
+      });
+    });
 
     function renderTable() {
       const trip = getCurrentTrip();
@@ -1895,6 +2109,16 @@
           currentExpenseFilter = "all";
       }
 
+      // 存在しない値のフィルターを削除（データ削除時の整合性維持）
+      Object.keys(columnFilters).forEach(key => {
+        const existingValues = new Set(trip.expenses.map(e => String(e[key])));
+        for (const val of columnFilters[key]) {
+          if (!existingValues.has(val)) {
+            columnFilters[key].delete(val);
+          }
+        }
+      });
+
       const tbody = document.getElementById("expenseBody");
       const emptyMessage = document.getElementById("emptyMessage");
       tbody.innerHTML = "";
@@ -1902,11 +2126,20 @@
       sortExpensesByDate(trip);
       
       let filteredExpenses = trip.expenses;
+      
+      // 対象者フィルター
       if (currentExpenseFilter !== "all") {
-        filteredExpenses = trip.expenses.filter(row => {
+        filteredExpenses = filteredExpenses.filter(row => {
            return row.expenseType === "共通" || row.expenseType === `${currentExpenseFilter}のみ`;
         });
       }
+
+      // 各列のフィルター
+      Object.keys(columnFilters).forEach(key => {
+        if (columnFilters[key].size > 0) {
+          filteredExpenses = filteredExpenses.filter(row => columnFilters[key].has(String(row[key])));
+        }
+      });
 
       emptyMessage.style.display = filteredExpenses.length === 0 ? "block" : "none";
 
@@ -2309,35 +2542,59 @@
       document.getElementById("customModal").classList.add("hidden");
     }
 
+    function fallbackCopyText(textToCopy) {
+      const textArea = document.createElement("textarea");
+      textArea.value = textToCopy;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showModal("共有", "URLをクリップボードにコピーしました！<br><br><small style='word-break: break-all;'>" + escapeHTML(textToCopy) + "</small>");
+      } catch (err) {
+        showModal("エラー", "URLのコピーに失敗しました。");
+      }
+      document.body.removeChild(textArea);
+    }
+
     function shareApp() {
-      const url = window.location.href.split('?')[0]; // ベースURLを取得
+      let url = window.location.href.split('?')[0]; // ベースURLを取得
       
-      if (navigator.share) {
-        navigator.share({
-          title: '旅行費用精算ツール',
-          text: '旅行の費用を簡単に精算・共有できるツールです。',
-          url: url
-        }).catch(err => {
-          if (err.name !== 'AbortError') {
-            console.error('シェアに失敗しました:', err);
-          }
-        });
-      } else {
-        // Web Share APIが使えない場合のフォールバック（クリップボードにコピー）
-        const textArea = document.createElement("textarea");
-        textArea.value = url;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-9999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-          document.execCommand('copy');
-          showModal("共有", "アプリのURLをクリップボードにコピーしました！<br><br><small style='word-break: break-all;'>" + escapeHTML(url) + "</small>");
-        } catch (err) {
-          showModal("エラー", "URLのコピーに失敗しました。");
+      // プレビュー環境(about:srcdocなど)での対策
+      let isValidUrl = true;
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          isValidUrl = false;
         }
-        document.body.removeChild(textArea);
+      } catch(e) {
+        isValidUrl = false;
+      }
+
+      if (!isValidUrl) {
+        // プレビュー環境では有効なURLがないため、フォールバック用のメッセージを含める
+        url = "https://your-domain.com/ (※現在プレビュー環境のため仮のURLです。公開時に正しいURLになります)";
+      }
+
+      if (navigator.share && isValidUrl) {
+        try {
+          navigator.share({
+            url: url
+          }).catch(err => {
+            if (err.name !== 'AbortError') {
+              console.error('シェアに失敗しました:', err);
+              fallbackCopyText(url);
+            }
+          });
+        } catch (err) {
+          console.error('シェア呼び出しエラー:', err);
+          fallbackCopyText(url);
+        }
+      } else {
+        // Web Share APIが使えない、または無効なURLの場合はクリップボードにコピー
+        fallbackCopyText(url);
       }
     }
 
