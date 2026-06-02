@@ -336,7 +336,7 @@
       box-shadow: var(--shadow-md);
     }
 
-    button.danger { background: var(--danger-gradient); box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); }
+    button.danger { background: var(--danger-gradient); box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); color: #fff; }
     button.danger:hover:not(:disabled) { box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4); }
     
     button.small { padding: 6px 16px; min-height: 36px; font-size: 13px; border-radius: var(--radius-sm); }
@@ -416,6 +416,12 @@
       font-size: 15px; font-weight: 700; text-align: left;
       box-sizing: border-box; word-break: break-word;
       box-shadow: var(--shadow-sm);
+    }
+    
+    .settlement-result.settled {
+      background: var(--soft);
+      border-color: var(--border);
+      color: var(--muted);
     }
 
     .summary-grid .card { overflow-x: auto; }
@@ -531,7 +537,7 @@
       align-items: stretch; gap: 12px; min-height: auto;
     }
     #settlementBaseArea .radio-label {
-      display: flex; align-items: center !important; justify-content: flex-start !important;
+      display: flex; align-items: flex-start !important; justify-content: flex-start !important;
       height: 100%; padding: 14px; box-sizing: border-box;
       border: 1px solid var(--border); border-radius: var(--radius-sm);
       background: #fff; transition: border-color 0.2s, box-shadow 0.2s;
@@ -2239,6 +2245,11 @@
     }
 
     function renderDisplayRow(row, index, jpy, displayIndex = index) {
+      let isSettled = false;
+      if (row.expenseType === "共通" && row.settlementStatus === "精算済み") {
+          isSettled = true;
+      }
+    
       return `
         <td data-label="No." style="text-align: center;">${displayIndex + 1}</td>
         <td data-label="日付">${escapeHTML(row.date)}</td>
@@ -2250,12 +2261,12 @@
         <td data-label="負担対象">${escapeHTML(row.expenseType)}</td>
         
         <td class="intl-only" data-label="通貨">${escapeHTML(getCurrencyLabel(row.currency))}</td>
-        <td class="intl-only num" data-label="現地通貨額">${formatNumber(row.amount)}</td>
+        <td class="intl-only num" data-label="現地通貨額">${isSettled ? `<span style="text-decoration: line-through; color: var(--muted);">${formatNumber(row.amount)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : formatNumber(row.amount)}</td>
         <td class="intl-only num" data-label="為替レート">${row.currency === "JPY" ? "1" : formatNumber(row.exchangeRate)}</td>
-        <td class="intl-only num" data-label="任意入力額(円)">${row.jpyAmount === "" ? "" : formatYen(row.jpyAmount)}</td>
-        <td class="intl-only jpy-cell" data-label="円換算額">${jpy === "" ? "" : formatYen(jpy)}</td>
+        <td class="intl-only num" data-label="任意入力額(円)">${isSettled && row.jpyAmount !== "" ? `<span style="text-decoration: line-through; color: var(--muted);">${formatYen(row.jpyAmount)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : (row.jpyAmount === "" ? "" : formatYen(row.jpyAmount))}</td>
+        <td class="intl-only jpy-cell" data-label="円換算額">${jpy === "" ? "" : (isSettled ? `<span style="text-decoration: line-through; color: var(--muted);">${formatYen(jpy)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : formatYen(jpy))}</td>
         
-        <td class="domestic-only num" data-label="金額（円）">${formatYen(row.amount)}</td>
+        <td class="domestic-only num" data-label="金額（円）">${isSettled ? `<span style="text-decoration: line-through; color: var(--muted);">${formatYen(row.amount)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : formatYen(row.amount)}</td>
         
         <td data-label="精算状態">${escapeHTML(row.settlementStatus)}</td>
         <td data-label="メモ">${escapeHTML(row.note)}</td>
@@ -2279,8 +2290,8 @@
         <td class="intl-only" data-label="通貨"><select onchange="updateRow(${index}, 'currency', this.value); setDefaultRateForExpense(${index});">${makeCurrencyOptions(row.currency)}</select></td>
         <td class="intl-only" data-label="現地通貨額"><input type="number" min="0" step="0.01" value="${escapeHTML(row.amount)}" onchange="updateRow(${index}, 'amount', this.value)"></td>
         <td class="intl-only" data-label="為替レート"><input type="number" min="0" step="0.0001" value="${escapeHTML(row.currency === 'JPY' ? 1 : row.exchangeRate)}" ${row.currency === 'JPY' ? 'disabled' : ''} onchange="updateRow(${index}, 'exchangeRate', this.value)"></td>
-        <td class="intl-only" data-label="任意入力額(円)"><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" onchange="updateRow(${index}, 'jpyAmount', this.value)"></td>
-        <td class="intl-only jpy-cell" data-label="円換算額">${jpy === "" ? "" : formatYen(jpy)}</td>
+        <td class="intl-only" data-label="手入力金額(円)"><input type="number" min="0" step="1" value="${escapeHTML(row.jpyAmount)}" onchange="updateRow(${index}, 'jpyAmount', this.value)"></td>
+        <td class="intl-only jpy-cell" data-label="精算額(円)">${jpy === "" ? "" : formatYen(jpy)}</td>
         
         <td class="domestic-only" data-label="金額（円）"><input type="number" min="0" step="1" value="${escapeHTML(row.amount)}" onchange="updateRow(${index}, 'amount', this.value)"></td>
         
@@ -2390,6 +2401,8 @@
       const personalHead = document.getElementById("commonSummaryPersonalHead");
       const personalBody = document.getElementById("commonSummaryPersonalBody");
       
+      const isAllSettled = summary.unsettledCommonTotal === 0 && summary.settledCommonTotal > 0;
+      
       if (personalHead && personalBody) {
         personalHead.innerHTML = `
           <tr>
@@ -2404,27 +2417,42 @@
         let personalRowsHtml = '';
         summary.participants.forEach(name => {
             const data = summary.result[name];
-            const diff = data.unsettledCommonDiff;
+            
+            // 全体が精算済みなら「全共通費」ベース、そうでなければ「未精算」ベースで表示
+            const targetPaid = isAllSettled ? data.commonPaidAll : data.unsettledCommonPaid;
+            const targetShare = isAllSettled ? summary.actualCommonShare : summary.unsettledShare;
+            const targetDiff = isAllSettled ? (data.commonPaidAll - summary.actualCommonShare) : data.unsettledCommonDiff;
+            
             let diffStr = '';
             let statusStr = '';
-            if (diff > 0) {
-                diffStr = '+' + formatYen(diff);
+            let rawStatusText = '';
+            if (targetDiff > 0) {
+                diffStr = '+' + formatYen(targetDiff);
+                rawStatusText = '受取';
                 statusStr = '<span style="color: var(--accent); font-weight: bold;">受取</span>';
-            } else if (diff < 0) {
-                diffStr = '<span style="color: var(--danger);">' + '-' + formatYen(Math.abs(diff)) + '</span>';
+            } else if (targetDiff < 0) {
+                diffStr = '<span style="color: var(--danger);">' + '-' + formatYen(Math.abs(targetDiff)) + '</span>';
+                rawStatusText = '支払';
                 statusStr = '<span style="color: var(--danger); font-weight: bold;">支払</span>';
             } else {
                 diffStr = '±0円';
+                rawStatusText = '精算なし';
                 statusStr = '<span style="color: var(--muted);">精算なし</span>';
+            }
+
+            if (isAllSettled && targetDiff !== 0) {
+                statusStr = `<span style="text-decoration: line-through; color: var(--muted);">${rawStatusText}</span><br><span style="color: var(--success-text); font-weight: bold; font-size: 12px;">精算済み</span>`;
+            } else if (isAllSettled && targetDiff === 0) {
+                statusStr = `<span style="text-decoration: line-through; color: var(--muted);">精算なし</span><br><span style="color: var(--success-text); font-weight: bold; font-size: 12px;">精算済み</span>`;
             }
 
             personalRowsHtml += `
               <tr>
                 <td>${escapeHTML(name)}</td>
-                <td class="num">${formatYen(data.unsettledCommonPaid)}</td>
-                <td class="num">${formatYen(summary.unsettledShare)}</td>
+                <td class="num">${formatYen(targetPaid)}</td>
+                <td class="num">${formatYen(targetShare)}</td>
                 <td class="num">${diffStr}</td>
-                <td style="text-align:center;">${statusStr}</td>
+                <td style="text-align:center; vertical-align:middle;">${statusStr}</td>
               </tr>
             `;
         });
@@ -2440,12 +2468,63 @@
         return;
       }
 
+      if (isAllSettled) {
+          // すべて精算済みの場合の表示
+          let settledHtml = `<div class="settlement-result settled" style="flex-direction: column; align-items: flex-start; gap: 8px;">`;
+          
+          // 精算済みの金額だけで計算を行う
+          const settledSummary = JSON.parse(JSON.stringify(summary));
+          const settledResult = {};
+          summary.participants.forEach(name => {
+             settledResult[name] = { unsettledCommonDiff: 0, unsettledCommonPaid: 0 };
+          });
+          
+          const trip = getCurrentTrip();
+          let settledTotal = 0;
+          if (trip) {
+              trip.expenses.forEach(row => {
+                  const jpy = calculateJPY(row, trip);
+                  if (jpy !== "" && row.expenseType === "共通" && row.settlementStatus === "精算済み") {
+                      settledTotal += jpy;
+                      if (settledResult[row.payer]) settledResult[row.payer].unsettledCommonPaid += jpy;
+                  }
+              });
+          }
+          const settledShare = summary.participants.length > 0 ? settledTotal / summary.participants.length : 0;
+          summary.participants.forEach(name => {
+              settledResult[name].unsettledCommonDiff = settledResult[name].unsettledCommonPaid - settledShare;
+          });
+          settledSummary.result = settledResult;
+          
+          const pastSettlements = calculateSettlements(settledSummary);
+          if (pastSettlements.length > 0) {
+              settledHtml += pastSettlements.map(item => `
+                <div style="display: flex; align-items: center; width: 100%;">
+                  <span style="text-decoration: line-through; margin-right: 8px;">${escapeHTML(item.from)} → ${escapeHTML(item.to)}：${formatYen(item.amount)}</span>
+                  <span style="font-size: 12px; font-weight: bold; color: var(--success-text);">精算済み</span>
+                </div>
+              `).join("");
+          } else {
+               settledHtml += `
+                 <div style="display: flex; align-items: center; width: 100%;">
+                   <span style="text-decoration: line-through; margin-right: 8px;">精算額：0円</span>
+                   <span style="font-size: 12px; font-weight: bold; color: var(--success-text);">精算済み</span>
+                 </div>
+               `;
+          }
+          settledHtml += `</div>`;
+          list.innerHTML = settledHtml;
+          if (settleBtn) settleBtn.style.display = "none";
+          return;
+      }
+
       const settlements = calculateSettlements(summary);
       if (settlements.length === 0) {
         list.innerHTML = `<div class="settlement-result" style="background: var(--soft); color: var(--muted); border-color: var(--border);">精算額：0円</div>`;
         if (settleBtn) settleBtn.style.display = "none";
         return;
       }
+      
       list.innerHTML = settlements.map(item => `<div class="settlement-result">${escapeHTML(item.from)} → ${escapeHTML(item.to)}：${formatYen(item.amount)}</div>`).join("");
       if (settleBtn) settleBtn.style.display = "block";
     }
@@ -2687,7 +2766,7 @@
       const tb = document.getElementById("modalToolbar");
       if(tb) {
         tb.innerHTML = `
-          <button id="modalConfirmBtn" class="danger">はい</button>
+          <button id="modalConfirmBtn" class="danger" style="color: white;">はい</button>
           <button class="secondary" onclick="closeModal()">キャンセル</button>
         `;
         document.getElementById("modalConfirmBtn").onclick = () => {
