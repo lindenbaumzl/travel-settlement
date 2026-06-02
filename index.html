@@ -314,6 +314,13 @@
       transform: translateY(0);
       box-shadow: 0 1px 2px rgba(59, 130, 246, 0.3);
     }
+    
+    button:disabled, button.disabled-btn {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
 
     button.wrap-text { white-space: normal; line-height: 1.4; }
 
@@ -323,14 +330,14 @@
       border: 1px solid var(--border);
       box-shadow: var(--shadow-sm);
     }
-    button.secondary:hover { 
+    button.secondary:hover:not(:disabled) { 
       background: var(--soft); 
       border-color: #cbd5e1;
       box-shadow: var(--shadow-md);
     }
 
     button.danger { background: var(--danger-gradient); box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); }
-    button.danger:hover { box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4); }
+    button.danger:hover:not(:disabled) { box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4); }
     
     button.small { padding: 6px 16px; min-height: 36px; font-size: 13px; border-radius: var(--radius-sm); }
     button.icon { width: 44px; height: 44px; padding: 0; flex-shrink: 0; font-size: 18px; }
@@ -591,7 +598,8 @@
           <h1>旅行費用精算ツール</h1>
           <p class="subtitle" style="margin-bottom: 0;">複数の旅行を追加・記録・編集・削除できます。各旅行ごとに参加者、通貨、出費、精算結果を管理します。</p>
         </div>
-        <div style="margin-top: 4px;">
+        <div style="margin-top: 4px; display: flex; gap: 8px;">
+          <button class="secondary small wrap-text undo-btn" onclick="undoLastAction()" disabled>↩ 元に戻す</button>
           <button class="secondary small wrap-text" onclick="shareApp()">URLを共有</button>
         </div>
       </div>
@@ -661,6 +669,7 @@
       </div>
       <div class="toolbar row-mobile">
         <button class="secondary" style="padding-left: 12px; padding-right: 12px;" onclick="showMainView()">ホーム</button>
+        <button class="secondary undo-btn" style="padding-left: 12px; padding-right: 12px;" onclick="undoLastAction()" disabled>↩ 元に戻す</button>
         <button class="secondary" style="padding-left: 12px; padding-right: 12px;" onclick="exportCSV()">CSV出力</button>
       </div>
 
@@ -790,6 +799,11 @@
           </div>
 
           <div id="settlementList" class="settlement-list" style="margin-bottom: 16px;"></div>
+          
+          <div id="settleAllButtonContainer" style="margin-top: 16px; display: none;">
+            <button onclick="markAllAsSettled()">精算済みにする</button>
+            <p class="note" style="margin-top: 8px;">※支出一覧の未精算項目が一括で更新されます（「対象外」の項目は変更されません）。</p>
+          </div>
         </section>
       </div>
 
@@ -921,7 +935,7 @@
     <div class="modal-content">
       <h2 id="modalTitle" style="margin-top:0;"></h2>
       <div id="modalBody"></div>
-      <div class="toolbar" style="justify-content: flex-end; margin-top: 24px;">
+      <div id="modalToolbar" class="toolbar" style="justify-content: flex-end; margin-top: 24px;">
         <button class="secondary" onclick="closeModal()">閉じる</button>
       </div>
     </div>
@@ -977,19 +991,10 @@
     const categories = ["交通", "宿泊", "食事", "カフェ", "観光", "娯楽", "買い物", "ドラッグストア", "通信", "手数料", "チップ", "荷物", "洗濯", "駐車場", "その他"];
     const paymentMethods = ["現金", "クレジットカード", "Wiseカード", "交通系ICカード", "その他"];
     const paymentStatuses = ["未確定", "確定済み"];
-    const settlementStatuses = ["未精算", "精算済", "対象外"];
+    const settlementStatuses = ["未精算", "精算済み", "対象外"];
     const majorCurrencyCodes = ["JPY", "USD", "EUR", "GBP", "CNY", "KRW", "TWD", "HKD", "SGD", "AUD", "CAD", "CHF", "THB", "MYR", "PHP", "IDR", "VND"];
     const exchangeRateCache = {};
     
-    let chartInstances = {};
-    let selectedChartParticipants = new Set();
-    const categoryColors = {
-      "交通": "#4BC0C0", "宿泊": "#36A2EB", "食事": "#FF6384", "カフェ": "#FF9F40", 
-      "観光": "#FFCE56", "娯楽": "#9966FF", "買い物": "#F7464A", "ドラッグストア": "#FDB45C", 
-      "通信": "#3366CC", "手数料": "#8D9E8C", "チップ": "#949FB1", "荷物": "#C9CBFF", 
-      "洗濯": "#FFB6C1", "駐車場": "#E7E9ED", "その他": "#4D5360"
-    };
-
     const currencyList = [
       { country: "日本", code: "JPY", symbol: "¥" },
       { country: "アメリカ", code: "USD", symbol: "$" },
@@ -1044,6 +1049,59 @@
       expenseType: new Set(),
       settlementStatus: new Set()
     };
+    
+    let chartInstances = {};
+    let selectedChartParticipants = new Set();
+    const categoryColors = {
+      "交通": "#4BC0C0", "宿泊": "#36A2EB", "食事": "#FF6384", "カフェ": "#FF9F40", 
+      "観光": "#FFCE56", "娯楽": "#9966FF", "買い物": "#F7464A", "ドラッグストア": "#FDB45C", 
+      "通信": "#3366CC", "手数料": "#8D9E8C", "チップ": "#949FB1", "荷物": "#C9CBFF", 
+      "洗濯": "#FFB6C1", "駐車場": "#E7E9ED", "その他": "#4D5360"
+    };
+
+    let undoStack = [];
+    let editBackup = {};
+
+    function pushUndoState(tripId, originalData) {
+        undoStack.push({
+            tripId: tripId,
+            data: originalData ? JSON.parse(JSON.stringify(originalData)) : null
+        });
+        if (undoStack.length > 20) {
+            undoStack.shift();
+        }
+        updateUndoButtonUI();
+    }
+
+    async function undoLastAction() {
+        if (undoStack.length === 0) return;
+        const last = undoStack.pop();
+        updateUndoButtonUI();
+        
+        try {
+            if (last.data === null) {
+                await deleteDoc(doc(db, 'trips', last.tripId));
+            } else {
+                await setDoc(doc(db, 'trips', last.tripId), last.data);
+            }
+        } catch (e) {
+            console.error("Undo error", e);
+            showModal("エラー", "元に戻す操作に失敗しました。");
+        }
+    }
+
+    function updateUndoButtonUI() {
+        const btns = document.querySelectorAll('.undo-btn');
+        btns.forEach(btn => {
+            if (undoStack.length === 0) {
+                btn.disabled = true;
+                btn.classList.add('disabled-btn');
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('disabled-btn');
+            }
+        });
+    }
 
     // ====== グローバルスコープへの関数バインディング ======
     window.showNewTripForm = showNewTripForm;
@@ -1089,7 +1147,10 @@
     window.toggleColumnFilter = toggleColumnFilter;
     window.toggleFilterPopup = toggleFilterPopup;
     window.clearColumnFilter = clearColumnFilter;
+    window.markAllAsSettled = markAllAsSettled;
     window.shareApp = shareApp;
+    window.undoLastAction = undoLastAction;
+    window.showConfirm = showConfirm;
 
     // ====== Firebase Setup ======
     const myFirebaseConfig = {
@@ -1472,7 +1533,7 @@
           if (row.settlementStatus === "未精算") {
             unsettledCommonTotal += jpy;
             if (result[row.payer]) result[row.payer].unsettledCommonPaid += jpy;
-          } else if (row.settlementStatus === "精算済") {
+          } else if (row.settlementStatus === "精算済み") {
             settledCommonTotal += jpy;
           }
           
@@ -1665,6 +1726,8 @@
         participants, expenses: [] 
       };
       
+      pushUndoState(newTrip.id, null);
+      
       const success = await saveTripDB(newTrip);
       if (success) {
         resetNewTripForm();
@@ -1672,11 +1735,14 @@
       }
     }
 
-    async function deleteTrip(id) {
+    function deleteTrip(id) {
       const trip = trips.find(item => item.id === id);
       if (!trip) return;
-      if (!confirm(`「${trip.title}」を削除します。よろしいですか？`)) return;
-      await deleteTripDB(id);
+      
+      showConfirm("確認", `「${escapeHTML(trip.title)}」を削除します。よろしいですか？`, async () => {
+        pushUndoState(id, trip);
+        await deleteTripDB(id);
+      });
     }
 
     function renderTripList() {
@@ -1729,6 +1795,10 @@
     async function changeSettlementBase(value) {
       const trip = getCurrentTrip();
       if (!trip) return;
+      
+      const originalTrip = JSON.parse(JSON.stringify(trip));
+      pushUndoState(originalTrip.id, originalTrip);
+      
       trip.settlementBase = value;
       await saveTripDB(trip);
     }
@@ -1788,6 +1858,8 @@
     async function confirmTripInfoEdit() {
       const trip = getCurrentTrip();
       if (!trip) return;
+      const originalTrip = JSON.parse(JSON.stringify(trip));
+      
       trip.title = document.getElementById("editTripTitle").value.trim() || "無題の旅行";
       trip.place = document.getElementById("editTripPlace").value.trim();
       trip.startDate = document.getElementById("editTripStart").value;
@@ -1797,6 +1869,8 @@
       trip.localCurrency = trip.tripType === "international" ? document.getElementById("editLocalCurrency").value : "JPY";
       trip.expenses = trip.expenses.map(row => normalizeExpenseRow(row, trip.participants, trip));
       inputRows = inputRows.map(row => normalizeExpenseRow(row, trip.participants, trip));
+      
+      pushUndoState(originalTrip.id, originalTrip);
       
       const success = await saveTripDB(trip);
       if (success) {
@@ -1871,6 +1945,8 @@
         return;
       }
 
+      const originalTrip = JSON.parse(JSON.stringify(trip));
+
       const renamedMap = new Map();
       oldParticipants.forEach((oldName, index) => {
         if (newParticipants[index]) renamedMap.set(oldName, newParticipants[index]);
@@ -1888,6 +1964,8 @@
         return normalizeExpenseRow(updated, newParticipants, trip);
       });
       inputRows = inputRows.map(row => normalizeExpenseRow(row, newParticipants, trip));
+      
+      pushUndoState(originalTrip.id, originalTrip);
       await saveTripDB(trip);
     }
 
@@ -1980,9 +2058,13 @@
         showModal("エラー", "登録する内容を入力してください。");
         return;
       }
+      
+      const originalTrip = JSON.parse(JSON.stringify(trip));
 
       trip.expenses.push(...validRows.map(row => ({ ...row, id: generateId("exp") })));
       sortExpensesByDate(trip);
+      
+      pushUndoState(originalTrip.id, originalTrip);
       
       const success = await saveTripDB(trip);
       if (success) {
@@ -2209,6 +2291,10 @@
     }
 
     function startEdit(id) {
+      const trip = getCurrentTrip();
+      if (trip && editingIds.size === 0) {
+          editBackup[trip.id] = JSON.parse(JSON.stringify(trip));
+      }
       editingIds.add(id);
       renderTable();
     }
@@ -2220,6 +2306,12 @@
         renderTable();
         return;
       }
+      
+      if (editingIds.size === 0 && editBackup[trip.id]) {
+          pushUndoState(trip.id, editBackup[trip.id]);
+          delete editBackup[trip.id];
+      }
+
       trip.expenses = trip.expenses.map(row => normalizeExpenseRow(row, trip.participants, trip));
       sortExpensesByDate(trip);
       renderTable(); 
@@ -2239,9 +2331,18 @@
     async function deleteRow(index) {
       const trip = getCurrentTrip();
       if (!trip) return;
+      
+      const originalTrip = (editingIds.size > 0 && editBackup[trip.id]) ? editBackup[trip.id] : JSON.parse(JSON.stringify(trip));
+      pushUndoState(originalTrip.id, originalTrip);
+
       const target = trip.expenses[index];
       if (target) editingIds.delete(target.id);
       trip.expenses.splice(index, 1);
+      
+      if (editingIds.size === 0) {
+          delete editBackup[trip.id];
+      }
+      
       renderTable(); 
       await saveTripDB(trip);
     }
@@ -2331,18 +2432,22 @@
       }
 
       const list = document.getElementById("settlementList");
+      const settleBtn = document.getElementById("settleAllButtonContainer");
 
       if (summary.participants.length <= 1) {
         list.innerHTML = `<div class="settlement-result">参加者が1名のため精算不要</div>`;
+        if (settleBtn) settleBtn.style.display = "none";
         return;
       }
 
       const settlements = calculateSettlements(summary);
       if (settlements.length === 0) {
         list.innerHTML = `<div class="settlement-result" style="background: var(--soft); color: var(--muted); border-color: var(--border);">精算額：0円</div>`;
+        if (settleBtn) settleBtn.style.display = "none";
         return;
       }
       list.innerHTML = settlements.map(item => `<div class="settlement-result">${escapeHTML(item.from)} → ${escapeHTML(item.to)}：${formatYen(item.amount)}</div>`).join("");
+      if (settleBtn) settleBtn.style.display = "block";
     }
 
     function renderChartControls(summary) {
@@ -2488,13 +2593,49 @@
       });
     }
 
-    async function clearTripExpenses() {
+    function clearTripExpenses() {
       const trip = getCurrentTrip();
       if (!trip) return;
-      if (!confirm("この旅行の支出をすべて削除します。よろしいですか？")) return;
-      trip.expenses = [];
-      editingIds.clear();
-      await saveTripDB(trip);
+      
+      showConfirm("確認", "この旅行の支出をすべて削除します。よろしいですか？", async () => {
+        const originalTrip = JSON.parse(JSON.stringify(trip));
+        pushUndoState(originalTrip.id, originalTrip);
+        
+        trip.expenses = [];
+        editingIds.clear();
+        delete editBackup[trip.id];
+        renderTable();
+        await saveTripDB(trip);
+      });
+    }
+    
+    function markAllAsSettled() {
+      const trip = getCurrentTrip();
+      if (!trip) return;
+      
+      const hasUnsettled = trip.expenses.some(row => row.settlementStatus === "未精算");
+      if (!hasUnsettled) {
+          showModal("お知らせ", "未精算の支出はありません。");
+          return;
+      }
+      
+      showConfirm("確認", "未精算の支出をすべて「精算済み」に変更し、精算を完了します。よろしいですか？", async () => {
+        const originalTrip = JSON.parse(JSON.stringify(trip));
+        
+        let updated = false;
+        trip.expenses.forEach(row => {
+          if (row.settlementStatus === "未精算") {
+            row.settlementStatus = "精算済み";
+            updated = true;
+          }
+        });
+        
+        if (updated) {
+          pushUndoState(originalTrip.id, originalTrip);
+          renderTable(); // 画面を即座に再描画する
+          await saveTripDB(trip);
+        }
+      });
     }
 
     function exportCSV() {
@@ -2535,6 +2676,25 @@
     function showModal(title, htmlContent) {
       document.getElementById("modalTitle").textContent = title;
       document.getElementById("modalBody").innerHTML = htmlContent;
+      const tb = document.getElementById("modalToolbar");
+      if(tb) tb.innerHTML = `<button class="secondary" onclick="closeModal()">閉じる</button>`;
+      document.getElementById("customModal").classList.remove("hidden");
+    }
+
+    function showConfirm(title, message, onConfirm) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalBody").innerHTML = `<p style="margin-bottom:0;">${message}</p>`;
+      const tb = document.getElementById("modalToolbar");
+      if(tb) {
+        tb.innerHTML = `
+          <button id="modalConfirmBtn" class="danger">はい</button>
+          <button class="secondary" onclick="closeModal()">キャンセル</button>
+        `;
+        document.getElementById("modalConfirmBtn").onclick = () => {
+          closeModal();
+          onConfirm();
+        };
+      }
       document.getElementById("customModal").classList.remove("hidden");
     }
 
@@ -2616,7 +2776,7 @@
         tripType: "domestic",
         expenses: [
           { amount: 9000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "未精算", payer: "A", category: "食事" },
-          { amount: 3000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "精算済", payer: "B", category: "交通" },
+          { amount: 3000, currency: "JPY", exchangeRate: 1, expenseType: "共通", settlementStatus: "精算済み", payer: "B", category: "交通" },
           { amount: 1000, currency: "JPY", exchangeRate: 1, expenseType: "Cのみ", settlementStatus: "対象外", payer: "C", category: "娯楽" }
         ]
       };
