@@ -2245,11 +2245,6 @@
     }
 
     function renderDisplayRow(row, index, jpy, displayIndex = index) {
-      let isSettled = false;
-      if (row.expenseType === "共通" && row.settlementStatus === "精算済み") {
-          isSettled = true;
-      }
-    
       return `
         <td data-label="No." style="text-align: center;">${displayIndex + 1}</td>
         <td data-label="日付">${escapeHTML(row.date)}</td>
@@ -2261,12 +2256,12 @@
         <td data-label="負担対象">${escapeHTML(row.expenseType)}</td>
         
         <td class="intl-only" data-label="通貨">${escapeHTML(getCurrencyLabel(row.currency))}</td>
-        <td class="intl-only num" data-label="現地通貨額">${isSettled ? `<span style="text-decoration: line-through; color: var(--muted);">${formatNumber(row.amount)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : formatNumber(row.amount)}</td>
+        <td class="intl-only num" data-label="現地通貨額">${formatNumber(row.amount)}</td>
         <td class="intl-only num" data-label="為替レート">${row.currency === "JPY" ? "1" : formatNumber(row.exchangeRate)}</td>
-        <td class="intl-only num" data-label="任意入力額(円)">${isSettled && row.jpyAmount !== "" ? `<span style="text-decoration: line-through; color: var(--muted);">${formatYen(row.jpyAmount)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : (row.jpyAmount === "" ? "" : formatYen(row.jpyAmount))}</td>
-        <td class="intl-only jpy-cell" data-label="円換算額">${jpy === "" ? "" : (isSettled ? `<span style="text-decoration: line-through; color: var(--muted);">${formatYen(jpy)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : formatYen(jpy))}</td>
+        <td class="intl-only num" data-label="任意入力額(円)">${row.jpyAmount === "" ? "" : formatYen(row.jpyAmount)}</td>
+        <td class="intl-only jpy-cell" data-label="円換算額">${jpy === "" ? "" : formatYen(jpy)}</td>
         
-        <td class="domestic-only num" data-label="金額（円）">${isSettled ? `<span style="text-decoration: line-through; color: var(--muted);">${formatYen(row.amount)}</span> <br><span style="font-size: 11px; font-weight: bold; color: var(--success-text);">精算済み</span>` : formatYen(row.amount)}</td>
+        <td class="domestic-only num" data-label="金額（円）">${formatYen(row.amount)}</td>
         
         <td data-label="精算状態">${escapeHTML(row.settlementStatus)}</td>
         <td data-label="メモ">${escapeHTML(row.note)}</td>
