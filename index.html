@@ -350,7 +350,6 @@
     .trip-card {
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 24px;
       background: #fff;
       box-shadow: var(--shadow-sm);
       display: flex;
@@ -371,7 +370,34 @@
       transform: translateY(-2px);
     }
 
-    .trip-card-title { font-size: 20px; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; letter-spacing: -0.01em; }
+    .trip-card-header {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .trip-card-header:hover {
+      background: var(--soft);
+    }
+    .trip-card-title { font-size: 18px; font-weight: 800; color: var(--text-dark); margin: 0; letter-spacing: -0.01em; }
+    .expand-icon { font-size: 12px; color: var(--muted); transition: transform 0.3s ease; }
+    .trip-card.expanded .expand-icon { transform: rotate(180deg); }
+    
+    .trip-card-content {
+      padding: 0 24px 24px;
+      display: none;
+      flex-direction: column;
+      border-top: 1px dashed var(--border);
+      margin-top: 0;
+      padding-top: 16px;
+    }
+    .trip-card.expanded .trip-card-content {
+      display: flex;
+    }
+
     .trip-meta { color: var(--muted); font-size: 14px; margin: 6px 0; display: flex; align-items: center; gap: 6px; }
     .trip-card .toolbar { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--soft); }
 
@@ -1761,16 +1787,22 @@
         const summary = calculateSummary(trip);
         const div = document.createElement("div");
         div.className = "trip-card";
+        div.id = `trip-card-${trip.id}`;
         div.innerHTML = `
-          <div class="trip-card-title">${escapeHTML(trip.title)}</div>
-          <div class="trip-meta">行き先：${escapeHTML(trip.place || "未設定")}</div>
-          <div class="trip-meta">期間：${escapeHTML(trip.startDate || "未設定")} ～ ${escapeHTML(trip.endDate || "未設定")}</div>
-          <div class="trip-meta">旅行区分：${trip.tripType === "international" ? "海外旅行" : "国内旅行"}${trip.tripType === "international" ? " / 複数通貨：" + (trip.multiCurrency ? "使用する" : "使用しない") : ""}</div>
-          <div class="trip-meta">参加者：${escapeHTML(trip.participants.length ? trip.participants.join("、") : "未設定")}</div>
-          <div class="trip-meta">支出件数：${trip.expenses.length}件 / 共通費：${formatYen(summary.totalCommonAll)}</div>
-          <div class="toolbar">
-            <button onclick="openTrip('${trip.id}')">記録を見る</button>
-            <button class="danger" onclick="deleteTrip('${trip.id}')">削除</button>
+          <div class="trip-card-header" onclick="document.getElementById('trip-card-${trip.id}').classList.toggle('expanded')">
+            <div class="trip-card-title">${escapeHTML(trip.title)}</div>
+            <span class="expand-icon">▼</span>
+          </div>
+          <div class="trip-card-content">
+            <div class="trip-meta">行き先：${escapeHTML(trip.place || "未設定")}</div>
+            <div class="trip-meta">期間：${escapeHTML(trip.startDate || "未設定")} ～ ${escapeHTML(trip.endDate || "未設定")}</div>
+            <div class="trip-meta">旅行区分：${trip.tripType === "international" ? "海外旅行" : "国内旅行"}${trip.tripType === "international" ? " / 複数通貨：" + (trip.multiCurrency ? "使用する" : "使用しない") : ""}</div>
+            <div class="trip-meta">参加者：${escapeHTML(trip.participants.length ? trip.participants.join("、") : "未設定")}</div>
+            <div class="trip-meta">支出件数：${trip.expenses.length}件 / 共通費：${formatYen(summary.totalCommonAll)}</div>
+            <div class="toolbar">
+              <button onclick="openTrip('${trip.id}')">記録を見る</button>
+              <button class="danger" onclick="deleteTrip('${trip.id}')">削除</button>
+            </div>
           </div>
         `;
         list.appendChild(div);
